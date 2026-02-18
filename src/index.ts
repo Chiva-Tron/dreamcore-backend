@@ -11,7 +11,11 @@ if (!databaseUrl) {
   console.warn("DATABASE_URL is not set");
 }
 const prisma = new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
 });
 
 const port = Number(process.env.PORT ?? 3000);
