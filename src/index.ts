@@ -426,6 +426,135 @@ app.put("/player/:user_id", async (req, res) => {
   }
 });
 
+async function buildLatestDeckResponse(userId: string) {
+  const latestRun = await prisma.run.findFirst({
+    where: { user_id: userId },
+    orderBy: { created_at: "desc" },
+    select: {
+      id: true,
+      end_deck: true,
+      end_relics: true,
+      created_at: true,
+      player: {
+        select: {
+          nickname: true
+        }
+      }
+    }
+  });
+
+  if (!latestRun) {
+    return null;
+  }
+
+  const deck = Array.isArray(latestRun.end_deck) ? latestRun.end_deck : [];
+  const relics = Array.isArray(latestRun.end_relics) ? latestRun.end_relics : [];
+
+  return {
+    user_id: userId,
+    nickname: latestRun.player.nickname,
+    deck,
+    relics,
+    source_run_id: latestRun.id,
+    updated_at: latestRun.created_at.toISOString()
+  };
+}
+
+app.get("/player/:user_id/deck", async (req, res) => {
+  const userId = typeof req.params.user_id === "string" ? req.params.user_id.trim() : "";
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["user_id_invalid"] });
+  }
+
+  try {
+    const result = await buildLatestDeckResponse(userId);
+    if (!result) {
+      return res.status(404).json({ error: "not_found" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error("get player deck failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.get("/players/:user_id/deck", async (req, res) => {
+  const userId = typeof req.params.user_id === "string" ? req.params.user_id.trim() : "";
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["user_id_invalid"] });
+  }
+
+  try {
+    const result = await buildLatestDeckResponse(userId);
+    if (!result) {
+      return res.status(404).json({ error: "not_found" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error("get players deck failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.get("/runs/latest", async (req, res) => {
+  const userId = typeof req.query.user_id === "string" ? req.query.user_id.trim() : "";
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["user_id_invalid"] });
+  }
+
+  try {
+    const result = await buildLatestDeckResponse(userId);
+    if (!result) {
+      return res.status(404).json({ error: "not_found" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error("get runs latest failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.get("/run/latest", async (req, res) => {
+  const userId = typeof req.query.user_id === "string" ? req.query.user_id.trim() : "";
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["user_id_invalid"] });
+  }
+
+  try {
+    const result = await buildLatestDeckResponse(userId);
+    if (!result) {
+      return res.status(404).json({ error: "not_found" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error("get run latest failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.get("/player-runs/latest", async (req, res) => {
+  const userId = typeof req.query.user_id === "string" ? req.query.user_id.trim() : "";
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["user_id_invalid"] });
+  }
+
+  try {
+    const result = await buildLatestDeckResponse(userId);
+    if (!result) {
+      return res.status(404).json({ error: "not_found" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error("get player runs latest failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
 app.get("/leaderboard", async (req, res) => {
   const limitRaw = typeof req.query.limit === "string" ? Number(req.query.limit) : 50;
   const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
