@@ -269,3 +269,5 @@ Campos principales:
 - Cartas: [database/cards_database.txt](database/cards_database.txt).
 - Eventos: [database/events_database.txt](database/events_database.txt).
 - Reliquias: [database/relics_database.txt](database/relics_database.txt).
+
+.
