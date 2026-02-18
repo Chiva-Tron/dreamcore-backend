@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 dotenv.config();
 
@@ -165,7 +165,7 @@ app.post("/submit-run", async (req, res) => {
   const payload = validation.data;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const player = await tx.player.upsert({
         where: { user_id: payload.user_id },
         create: {
@@ -273,7 +273,7 @@ app.get("/leaderboard", async (req, res) => {
       take: limit
     });
 
-    const items = rows.map((row, index) => ({
+    const items = rows.map((row: (typeof rows)[number], index: number) => ({
       rank: index + 1,
       user_id: row.user_id,
       nickname: row.nickname,
