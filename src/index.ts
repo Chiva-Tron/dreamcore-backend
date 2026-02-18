@@ -75,12 +75,82 @@ type RunPayload = {
   flags?: unknown;
 };
 
+type PlayerUpsertPayload = {
+  nickname: string;
+  version: string;
+  platform?: string;
+  platform_user_id?: string;
+  avatar_id?: string;
+};
+
 function isJsonValue(value: unknown): boolean {
   return typeof value === "object" && value !== null;
 }
 
 function isPlayerClass(value: unknown): value is RunPayload["start_class"] {
   return value === "titan" || value === "arcane" || value === "umbralist" || value === "no_class";
+}
+
+function isValidUserId(value: string): boolean {
+  return value.length > 0 && value.length <= 64;
+}
+
+function isValidNicknameCharset(value: string): boolean {
+  return /^[a-zA-Z0-9_]+$/.test(value);
+}
+
+function validatePlayerUpsertPayload(payload: unknown): { ok: boolean; errors: string[]; data?: PlayerUpsertPayload } {
+  const errors: string[] = [];
+  if (!payload || typeof payload !== "object") {
+    return { ok: false, errors: ["payload_invalid"] };
+  }
+
+  const data = payload as Record<string, unknown>;
+  const nickname = typeof data.nickname === "string" ? data.nickname : "";
+  const version = typeof data.version === "string" ? data.version.trim() : "";
+  const platform = typeof data.platform === "string" ? data.platform.trim() : undefined;
+  const platform_user_id = typeof data.platform_user_id === "string" ? data.platform_user_id.trim() : undefined;
+  const avatar_id = typeof data.avatar_id === "string" ? data.avatar_id.trim() : undefined;
+
+  if (!nickname) errors.push("nickname_required");
+  if (nickname && nickname.trim() !== nickname) errors.push("nickname_trim");
+  if (nickname.length < 3 || nickname.length > 16) errors.push("nickname_length");
+  if (nickname && !isValidNicknameCharset(nickname)) errors.push("nickname_charset");
+  if (!version) errors.push("version_required");
+  if (version.length > 32) errors.push("version_length");
+  if (platform && platform.length > 32) errors.push("platform_length");
+  if (platform_user_id && platform_user_id.length > 128) errors.push("platform_user_id_length");
+  if (avatar_id && avatar_id.length > 64) errors.push("avatar_id_length");
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  return {
+    ok: true,
+    errors: [],
+    data: {
+      nickname,
+      version,
+      platform,
+      platform_user_id,
+      avatar_id
+    }
+  };
+}
+
+function serializePlayer(player: {
+  user_id: string;
+  nickname: string;
+  best_score: number;
+  created_at: Date;
+  updated_at: Date;
+}) {
+  return {
+    user_id: player.user_id,
+    nickname: player.nickname,
+    best_score: player.best_score,
+    created_at: player.created_at.toISOString(),
+    updated_at: player.updated_at.toISOString()
+  };
 }
 
 function validateRunPayload(payload: unknown): { ok: boolean; errors: string[]; data?: RunPayload } {
@@ -269,6 +339,93 @@ app.post("/submit-run", async (req, res) => {
   }
 });
 
+app.get("/player/:user_id", async (req, res) => {
+  const userId = typeof req.params.user_id === "string" ? req.params.user_id.trim() : "";
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["user_id_invalid"] });
+  }
+
+  try {
+    const player = await prisma.player.findUnique({
+      where: { user_id: userId },
+      select: {
+        user_id: true,
+        nickname: true,
+        best_score: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
+
+    if (!player) {
+      return res.status(404).json({ error: "player_not_found" });
+    }
+
+    return res.json({ player: serializePlayer(player) });
+  } catch (error) {
+    console.error("get player failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.put("/player/:user_id", async (req, res) => {
+  const userId = typeof req.params.user_id === "string" ? req.params.user_id.trim() : "";
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["user_id_invalid"] });
+  }
+
+  const validation = validatePlayerUpsertPayload(req.body);
+  if (!validation.ok || !validation.data) {
+    return res.status(400).json({ error: "validation_failed", details: validation.errors });
+  }
+
+  const payload = validation.data;
+
+  try {
+    const existingPlayer = await prisma.player.findUnique({
+      where: { user_id: userId },
+      select: { id: true }
+    });
+
+    const created = !existingPlayer;
+
+    const player = await prisma.player.upsert({
+      where: { user_id: userId },
+      create: {
+        user_id: userId,
+        nickname: payload.nickname,
+        app_version: payload.version,
+        platform: payload.platform,
+        platform_user_id: payload.platform_user_id,
+        avatar_id: payload.avatar_id,
+        first_seen: new Date(),
+        last_seen: new Date()
+      },
+      update: {
+        nickname: payload.nickname,
+        app_version: payload.version,
+        platform: payload.platform,
+        platform_user_id: payload.platform_user_id,
+        avatar_id: payload.avatar_id,
+        last_seen: new Date()
+      },
+      select: {
+        user_id: true,
+        nickname: true,
+        best_score: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
+
+    const statusCode = created ? 201 : 200;
+    return res.status(statusCode).json({ player: serializePlayer(player), created });
+  } catch (error) {
+    console.error("upsert player failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
 app.get("/leaderboard", async (req, res) => {
   const limitRaw = typeof req.query.limit === "string" ? Number(req.query.limit) : 50;
   const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
@@ -295,6 +452,10 @@ app.get("/leaderboard", async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Dreamcore backend listening on ${port}`);
+});
+
+app.use((req, res) => {
+  return res.status(404).json({ error: "not_found" });
 });
 
 process.on("SIGINT", async () => {
