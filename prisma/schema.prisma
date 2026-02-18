@@ -1,0 +1,389 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PlayerClass {
+  titan
+  arcane
+  umbralist
+  no_class
+}
+
+enum RunResult {
+  finished
+  quit
+  defeat
+  victory
+}
+
+enum ContentType {
+  cards
+  events
+  relics
+  full_bundle
+}
+
+enum CardType {
+  invocation
+  hex
+}
+
+enum EventClass {
+  enemy
+  boss
+  rest
+  shop
+  sacrifice
+  upgrade
+  beginning
+  exit
+  mystery
+}
+
+enum ApiKeyScope {
+  client_submit
+  admin
+  internal
+}
+
+enum ApiKeyStatus {
+  active
+  revoked
+  expired
+  disabled
+}
+
+enum FraudSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum TelemetrySource {
+  server
+  client
+  worker
+}
+
+enum TelemetryTrustLevel {
+  high
+  medium
+  low
+}
+
+enum TelemetryEventName {
+  run_started
+  run_submitted
+  run_finished
+  floor_completed
+  node_entered
+  battle_started
+  battle_finished
+  card_picked
+  relic_picked
+  shop_purchase
+  player_banned
+  fraud_flag_created
+}
+
+model Player {
+  id                     String    @id @default(uuid()) @db.Uuid
+  user_id                String    @unique @db.VarChar(64)
+  nickname               String    @db.VarChar(16)
+  avatar_id              String?   @db.VarChar(64)
+  platform               String?   @db.VarChar(32)
+  platform_user_id       String?   @db.VarChar(128)
+  app_version            String?   @db.VarChar(32)
+  player_level           Int       @default(1)
+  player_xp              Int       @default(0)
+  gems_balance           Int       @default(0)
+  gold_balance           Int       @default(0)
+  best_score             Int       @default(0)
+  best_run_id            String?   @db.Uuid
+  rank_position_cached   Int?
+  trust_score            Int       @default(100)
+  is_flagged             Boolean   @default(false)
+  is_banned              Boolean   @default(false)
+  ban_reason             String?   @db.Text
+  ban_until              DateTime? @db.Timestamptz(6)
+  first_seen             DateTime  @default(now()) @db.Timestamptz(6)
+  last_seen              DateTime  @default(now()) @db.Timestamptz(6)
+  sessions_count         Int       @default(0)
+  total_playtime_seconds Int       @default(0)
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @updatedAt @db.Timestamptz(6)
+
+  bestRun          Run?              @relation("PlayerBestRun", fields: [best_run_id], references: [id])
+  runs             Run[]
+  leaderboard      Leaderboard?
+  telemetry_events TelemetryEvent[]
+
+  @@index([best_score(sort: Desc)])
+  @@index([last_seen(sort: Desc)])
+  @@index([is_banned, is_flagged])
+  @@map("players")
+}
+
+model Run {
+  id                String    @id @default(uuid()) @db.Uuid
+  player_id         String    @db.Uuid
+  user_id           String    @db.VarChar(64)
+  nickname_snapshot String    @db.VarChar(16)
+  score             Int
+  seed              String    @db.VarChar(128)
+  run_seed          BigInt
+  run_time_ms       Int
+  version           String    @db.VarChar(32)
+  current_floor     Int
+  start_class       PlayerClass
+  start_deck        Json      @db.JsonB
+  start_relics      Json      @db.JsonB
+  end_class         PlayerClass
+  end_deck          Json      @db.JsonB
+  end_relics        Json      @db.JsonB
+  floor_events      Json      @db.JsonB
+  nodes_state       Json      @db.JsonB
+  inputs_hash       String?   @db.VarChar(256)
+  proof_hash        String?   @db.VarChar(256)
+  flags             Json?     @db.JsonB
+  run_result        RunResult @default(finished)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  player           Player           @relation(fields: [player_id], references: [id])
+  bestForPlayers   Player[]         @relation("PlayerBestRun")
+  leaderboardEntry Leaderboard?     @relation("LeaderboardBestRun")
+  run_events       RunEvent[]
+  fraud_flags      FraudFlag[]
+  telemetry_events TelemetryEvent[]
+
+  @@index([user_id, created_at(sort: Desc)])
+  @@index([score(sort: Desc), created_at(sort: Asc)])
+  @@index([run_seed])
+  @@index([version])
+  @@map("runs")
+}
+
+model Leaderboard {
+  user_id     String    @id @db.VarChar(64)
+  player_id   String    @unique @db.Uuid
+  nickname    String    @db.VarChar(16)
+  best_score  Int       @default(0)
+  best_run_id String?   @unique @db.Uuid
+  updated_at  DateTime  @updatedAt @db.Timestamptz(6)
+
+  player  Player @relation(fields: [player_id], references: [id])
+  bestRun Run?   @relation("LeaderboardBestRun", fields: [best_run_id], references: [id])
+
+  @@index([best_score(sort: Desc), updated_at(sort: Asc)])
+  @@map("leaderboard")
+}
+
+model RunEvent {
+  id         BigInt   @id @default(autoincrement())
+  run_id     String   @db.Uuid
+  floor      Int
+  node_type  String   @db.VarChar(32)
+  event_id   Int?
+  payload    Json?    @db.JsonB
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  run Run @relation(fields: [run_id], references: [id], onDelete: Cascade)
+
+  @@index([run_id, floor])
+  @@index([node_type])
+  @@map("run_events")
+}
+
+model ContentVersion {
+  id              String      @id @default(uuid()) @db.Uuid
+  content_type    ContentType
+  version         String      @db.VarChar(32)
+  checksum_sha256 String      @db.VarChar(64)
+  is_active       Boolean     @default(false)
+  created_at      DateTime    @default(now()) @db.Timestamptz(6)
+
+  cards  Card[]
+  relics Relic[]
+  events Event[]
+
+  @@unique([content_type, version])
+  @@map("content_versions")
+}
+
+model Card {
+  id                 Int      @id
+  card_class         String   @db.VarChar(32)
+  rarity             String   @db.VarChar(32)
+  tier               String   @db.VarChar(32)
+  name_es            String   @db.VarChar(128)
+  name_en            String   @db.VarChar(128)
+  image              String   @db.VarChar(256)
+  gold_coins         Int      @default(0)
+  red_coins          Int      @default(0)
+  life_cost          Int      @default(0)
+  additional_cost    Int      @default(0)
+  attack             Int?
+  speed              Int?
+  health             Int?
+  skill1             String?  @db.VarChar(64)
+  skill2             String?  @db.VarChar(64)
+  skill3             String?  @db.VarChar(64)
+  skill_value1       Int?
+  skill_value2       Int?
+  skill_value3       Int?
+  displayed_text     String?  @db.Text
+  condition          String?  @db.VarChar(64)
+  target             String?  @db.VarChar(64)
+  effect1            String?  @db.VarChar(64)
+  effect2            String?  @db.VarChar(64)
+  effect3            String?  @db.VarChar(64)
+  value1             Int?
+  value2             Int?
+  value3             Int?
+  turn_duration1     Int?
+  turn_duration2     Int?
+  turn_duration3     Int?
+  chance1            Int?
+  chance2            Int?
+  chance3            Int?
+  priority1          Int?
+  priority2          Int?
+  priority3          Int?
+  type               CardType
+  ethereal           Boolean  @default(false)
+  content_version_id String   @db.Uuid
+
+  content_version ContentVersion @relation(fields: [content_version_id], references: [id], onDelete: Restrict)
+
+  @@index([content_version_id])
+  @@map("cards")
+}
+
+model Relic {
+  id                 Int      @id
+  tier               String   @db.VarChar(32)
+  name_es            String   @db.VarChar(128)
+  name_en            String   @db.VarChar(128)
+  description        String   @db.Text
+  image              String   @db.VarChar(256)
+  rarity             String   @db.VarChar(32)
+  special_conditions String?  @db.Text
+  effect1            String?  @db.VarChar(64)
+  effect2            String?  @db.VarChar(64)
+  effect3            String?  @db.VarChar(64)
+  value1             Int?
+  value2             Int?
+  value3             Int?
+  content_version_id String   @db.Uuid
+
+  content_version ContentVersion @relation(fields: [content_version_id], references: [id], onDelete: Restrict)
+
+  @@index([content_version_id])
+  @@map("relics")
+}
+
+model Event {
+  id                     Int        @id
+  event_class            EventClass
+  name_es                String     @db.VarChar(128)
+  name_en                String     @db.VarChar(128)
+  enemy_skill            String?    @db.VarChar(128)
+  enemy_explanation      String?    @db.Text
+  deck                   Json       @db.JsonB
+  image                  String?    @db.VarChar(256)
+  scene                  String?    @db.VarChar(128)
+  health                 Int        @default(0)
+  reward_multiplier      Int        @default(0)
+  relic_reward           Int?
+  starting_gold_coins    Int        @default(0)
+  starting_cards_in_hand Int        @default(0)
+  cards_per_turn         Int        @default(0)
+  discards_per_turn      Int        @default(0)
+  special_conditions     String?    @db.Text
+  content_version_id     String     @db.Uuid
+
+  content_version ContentVersion @relation(fields: [content_version_id], references: [id], onDelete: Restrict)
+
+  @@index([content_version_id])
+  @@map("events")
+}
+
+model ApiKey {
+  id         String       @id @default(uuid()) @db.Uuid
+  name       String       @db.VarChar(64)
+  key_hash   String       @unique @db.VarChar(128)
+  scope      ApiKeyScope
+  status     ApiKeyStatus @default(active)
+  expires_at DateTime?    @db.Timestamptz(6)
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+
+  @@map("api_keys")
+}
+
+model RequestLog {
+  id          BigInt   @id @default(autoincrement())
+  request_id  String   @db.Uuid
+  path        String   @db.VarChar(128)
+  method      String   @db.VarChar(8)
+  user_id     String?  @db.VarChar(64)
+  ip_hash     String?  @db.VarChar(128)
+  status_code Int
+  duration_ms Int
+  error_code  String?  @db.VarChar(64)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)])
+  @@index([path, method])
+  @@index([status_code, created_at(sort: Desc)])
+  @@map("request_logs")
+}
+
+model FraudFlag {
+  id         BigInt        @id @default(autoincrement())
+  run_id     String        @db.Uuid
+  user_id    String        @db.VarChar(64)
+  rule_code  String        @db.VarChar(64)
+  severity   FraudSeverity
+  details    Json?         @db.JsonB
+  created_at DateTime      @default(now()) @db.Timestamptz(6)
+
+  run Run @relation(fields: [run_id], references: [id], onDelete: Cascade)
+
+  @@index([run_id])
+  @@index([user_id, created_at(sort: Desc)])
+  @@index([severity, created_at(sort: Desc)])
+  @@map("fraud_flags")
+}
+
+model TelemetryEvent {
+  id            BigInt              @id @default(autoincrement())
+  event_id      String              @unique @db.Uuid
+  event_name    TelemetryEventName
+  event_ts      DateTime            @db.Timestamptz(6)
+  received_at   DateTime            @default(now()) @db.Timestamptz(6)
+  user_id       String?             @db.VarChar(64)
+  player_id     String?             @db.Uuid
+  run_id        String?             @db.Uuid
+  app_version   String?             @db.VarChar(32)
+  platform      String?             @db.VarChar(32)
+  session_id    String?             @db.VarChar(64)
+  floor         Int?
+  node_type     String?             @db.VarChar(32)
+  event_payload Json?               @db.JsonB
+  source        TelemetrySource
+  trust_level   TelemetryTrustLevel @default(high)
+
+  player Player? @relation(fields: [player_id], references: [id], onDelete: SetNull)
+  run    Run?    @relation(fields: [run_id], references: [id], onDelete: SetNull)
+
+  @@index([event_ts(sort: Desc)])
+  @@index([user_id, event_ts(sort: Desc)])
+  @@index([run_id, event_ts(sort: Desc)])
+  @@index([event_name, event_ts(sort: Desc)])
+  @@map("telemetry_events")
+}
