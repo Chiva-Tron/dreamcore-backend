@@ -373,6 +373,67 @@ app.post("/submit-run", async (req, res) => {
   }
 });
 
+async function getCardsPayload() {
+  return prisma.card.findMany({
+    orderBy: { id: "asc" }
+  });
+}
+
+async function getRelicsPayload() {
+  return prisma.relic.findMany({
+    orderBy: { id: "asc" }
+  });
+}
+
+async function getEventsPayload() {
+  return prisma.event.findMany({
+    orderBy: { id: "asc" }
+  });
+}
+
+async function handleCardsContent(_req: express.Request, res: express.Response) {
+  try {
+    const cards = await getCardsPayload();
+    return res.json(cards);
+  } catch (error) {
+    console.error("get cards content failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+}
+
+async function handleRelicsContent(_req: express.Request, res: express.Response) {
+  try {
+    const relics = await getRelicsPayload();
+    return res.json(relics);
+  } catch (error) {
+    console.error("get relics content failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+}
+
+async function handleEventsContent(_req: express.Request, res: express.Response) {
+  try {
+    const events = await getEventsPayload();
+    return res.json(events);
+  } catch (error) {
+    console.error("get events content failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+}
+
+app.get("/content/cards", handleCardsContent);
+app.get("/cards", handleCardsContent);
+
+app.get("/content/relics", handleRelicsContent);
+app.get("/relics", handleRelicsContent);
+
+app.get("/content/events", handleEventsContent);
+app.get("/events", handleEventsContent);
+app.get("/content/run-events", handleEventsContent);
+app.get("/content/run_events", handleEventsContent);
+app.get("/run-events", handleEventsContent);
+app.get("/run_events", handleEventsContent);
+
 app.get("/player/:user_id", async (req, res) => {
   const userId = typeof req.params.user_id === "string" ? req.params.user_id.trim() : "";
   if (!isValidUserId(userId)) {
