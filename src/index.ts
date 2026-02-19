@@ -469,36 +469,99 @@ app.put("/player/:user_id", async (req, res) => {
 });
 
 async function buildLatestDeckResponse(userId: string) {
-  const latestRun = await prisma.run.findFirst({
+  const player = await prisma.player.findUnique({
     where: { user_id: userId },
-    orderBy: { created_at: "desc" },
     select: {
-      id: true,
-      end_deck: true,
-      end_relics: true,
-      created_at: true,
-      player: {
+      nickname: true,
+      leaderboard: {
         select: {
-          nickname: true
+          best_run_id: true
         }
       }
     }
   });
 
-  if (!latestRun) {
+  if (!player) {
     return null;
   }
 
-  const deck = Array.isArray(latestRun.end_deck) ? latestRun.end_deck : [];
-  const relics = Array.isArray(latestRun.end_relics) ? latestRun.end_relics : [];
+  const pickArray = (value: unknown, keys: string[]) => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (value && typeof value === "object") {
+      const record = value as Record<string, unknown>;
+      for (const key of keys) {
+        const nested = record[key];
+        if (Array.isArray(nested)) {
+          return nested;
+        }
+      }
+    }
+    return [] as unknown[];
+  };
+
+  const candidates: Array<{
+    id: string;
+    end_deck: unknown;
+    end_relics: unknown;
+    created_at: Date;
+  }> = [];
+
+  const bestRunId = player.leaderboard?.best_run_id;
+  if (bestRunId) {
+    const bestRun = await prisma.run.findUnique({
+      where: { id: bestRunId },
+      select: {
+        id: true,
+        end_deck: true,
+        end_relics: true,
+        created_at: true
+      }
+    });
+    if (bestRun) {
+      candidates.push(bestRun);
+    }
+  }
+
+  const recentRuns = await prisma.run.findMany({
+    where: { user_id: userId },
+    orderBy: { created_at: "desc" },
+    take: 15,
+    select: {
+      id: true,
+      end_deck: true,
+      end_relics: true,
+      created_at: true
+    }
+  });
+
+  for (const run of recentRuns) {
+    if (!candidates.some((candidate) => candidate.id === run.id)) {
+      candidates.push(run);
+    }
+  }
+
+  const chosenRun = candidates.find((run) => {
+    const deck = pickArray(run.end_deck, ["deck", "cards", "list"]);
+    const relics = pickArray(run.end_relics, ["relics", "items", "list"]);
+    return deck.length > 0 || relics.length > 0;
+  });
+
+  if (!chosenRun) {
+    return null;
+  }
+
+  const deck = pickArray(chosenRun.end_deck, ["deck", "cards", "list"]);
+  const relics = pickArray(chosenRun.end_relics, ["relics", "items", "list"]);
 
   return {
     user_id: userId,
-    nickname: latestRun.player.nickname,
+    nickname: player.nickname,
     deck,
     relics,
-    source_run_id: latestRun.id,
-    updated_at: latestRun.created_at.toISOString()
+    source_run_id: chosenRun.id,
+    updated_at: chosenRun.created_at.toISOString()
   };
 }
 
