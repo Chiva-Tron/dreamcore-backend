@@ -70,6 +70,7 @@ type RunPayload = {
   end_relics: unknown;
   floor_events: unknown;
   nodes_state: unknown;
+  run_result: "victory" | "defeat";
   inputs_hash?: string;
   proof_hash?: string;
   flags?: unknown;
@@ -89,6 +90,12 @@ function isJsonValue(value: unknown): boolean {
 
 function isPlayerClass(value: unknown): value is RunPayload["start_class"] {
   return value === "titan" || value === "arcane" || value === "umbralist" || value === "no_class";
+}
+
+function normalizeRunResult(value: unknown): RunPayload["run_result"] | undefined {
+  if (value === "win" || value === "victory") return "victory";
+  if (value === "loss" || value === "defeat") return "defeat";
+  return undefined;
 }
 
 function isValidUserId(value: string): boolean {
@@ -176,6 +183,7 @@ function validateRunPayload(payload: unknown): { ok: boolean; errors: string[]; 
   const end_relics = data.end_relics;
   const floor_events = data.floor_events;
   const nodes_state = data.nodes_state;
+  const run_result = normalizeRunResult(data.run_result);
   const inputs_hash = typeof data.inputs_hash === "string" ? data.inputs_hash : undefined;
   const proof_hash = typeof data.proof_hash === "string" ? data.proof_hash : undefined;
   const flags = data.flags;
@@ -200,10 +208,22 @@ function validateRunPayload(payload: unknown): { ok: boolean; errors: string[]; 
   if (!isJsonValue(end_relics)) errors.push("end_relics_required");
   if (!isJsonValue(floor_events)) errors.push("floor_events_required");
   if (!isJsonValue(nodes_state)) errors.push("nodes_state_required");
+  if (!run_result) errors.push("run_result_invalid");
   if (inputs_hash && inputs_hash.length > 256) errors.push("inputs_hash_length");
   if (proof_hash && proof_hash.length > 256) errors.push("proof_hash_length");
+  if (isJsonValue(flags)) {
+    const completed = (flags as Record<string, unknown>).completed;
+    if (completed !== undefined && typeof completed !== "boolean") {
+      errors.push("flags_completed_invalid");
+    }
+    if (completed === false) {
+      errors.push("run_not_completed");
+    }
+  }
 
   if (errors.length > 0) return { ok: false, errors };
+
+  const finalRunResult = run_result as RunPayload["run_result"];
 
   return {
     ok: true,
@@ -225,6 +245,7 @@ function validateRunPayload(payload: unknown): { ok: boolean; errors: string[]; 
       end_relics,
       floor_events,
       nodes_state,
+      run_result: finalRunResult,
       inputs_hash,
       proof_hash,
       flags
@@ -242,6 +263,8 @@ app.post("/submit-run", async (req, res) => {
 
   try {
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const runSeedBigInt = BigInt(payload.run_seed);
+
       const player = await tx.player.upsert({
         where: { user_id: payload.user_id },
         create: {
@@ -256,6 +279,28 @@ app.post("/submit-run", async (req, res) => {
         }
       });
 
+      const existingRun = await tx.run.findFirst({
+        where: {
+          user_id: payload.user_id,
+          run_seed: runSeedBigInt,
+          run_result: payload.run_result
+        },
+        select: {
+          id: true
+        }
+      });
+
+      const leaderboard = await tx.leaderboard.findUnique({
+        where: { player_id: player.id }
+      });
+
+      if (existingRun) {
+        return {
+          runId: existingRun.id,
+          bestScore: leaderboard ? leaderboard.best_score : payload.score
+        };
+      }
+
       const run = await tx.run.create({
         data: {
           player_id: player.id,
@@ -263,7 +308,7 @@ app.post("/submit-run", async (req, res) => {
           nickname_snapshot: payload.nickname,
           score: payload.score,
           seed: payload.seed,
-          run_seed: BigInt(payload.run_seed),
+          run_seed: runSeedBigInt,
           run_time_ms: payload.run_time_ms,
           version: payload.version,
           current_floor: payload.current_floor,
@@ -275,14 +320,11 @@ app.post("/submit-run", async (req, res) => {
           end_relics: payload.end_relics as any,
           floor_events: payload.floor_events as any,
           nodes_state: payload.nodes_state as any,
+          run_result: payload.run_result,
           inputs_hash: payload.inputs_hash,
           proof_hash: payload.proof_hash,
           flags: payload.flags as any
         }
-      });
-
-      const leaderboard = await tx.leaderboard.findUnique({
-        where: { player_id: player.id }
       });
 
       let bestScore = payload.score;
@@ -460,6 +502,29 @@ async function buildLatestDeckResponse(userId: string) {
   };
 }
 
+async function buildEmptyDeckResponseIfPlayerExists(userId: string) {
+  const player = await prisma.player.findUnique({
+    where: { user_id: userId },
+    select: {
+      nickname: true,
+      updated_at: true
+    }
+  });
+
+  if (!player) {
+    return null;
+  }
+
+  return {
+    user_id: userId,
+    nickname: player.nickname,
+    deck: [],
+    relics: [],
+    source_run_id: null,
+    updated_at: player.updated_at.toISOString()
+  };
+}
+
 app.get("/player/:user_id/deck", async (req, res) => {
   const userId = typeof req.params.user_id === "string" ? req.params.user_id.trim() : "";
   if (!isValidUserId(userId)) {
@@ -469,6 +534,10 @@ app.get("/player/:user_id/deck", async (req, res) => {
   try {
     const result = await buildLatestDeckResponse(userId);
     if (!result) {
+      const emptyResult = await buildEmptyDeckResponseIfPlayerExists(userId);
+      if (emptyResult) {
+        return res.json(emptyResult);
+      }
       return res.status(404).json({ error: "not_found" });
     }
 
@@ -488,6 +557,10 @@ app.get("/players/:user_id/deck", async (req, res) => {
   try {
     const result = await buildLatestDeckResponse(userId);
     if (!result) {
+      const emptyResult = await buildEmptyDeckResponseIfPlayerExists(userId);
+      if (emptyResult) {
+        return res.json(emptyResult);
+      }
       return res.status(404).json({ error: "not_found" });
     }
 
@@ -507,6 +580,10 @@ app.get("/runs/latest", async (req, res) => {
   try {
     const result = await buildLatestDeckResponse(userId);
     if (!result) {
+      const emptyResult = await buildEmptyDeckResponseIfPlayerExists(userId);
+      if (emptyResult) {
+        return res.json(emptyResult);
+      }
       return res.status(404).json({ error: "not_found" });
     }
 
@@ -526,6 +603,10 @@ app.get("/run/latest", async (req, res) => {
   try {
     const result = await buildLatestDeckResponse(userId);
     if (!result) {
+      const emptyResult = await buildEmptyDeckResponseIfPlayerExists(userId);
+      if (emptyResult) {
+        return res.json(emptyResult);
+      }
       return res.status(404).json({ error: "not_found" });
     }
 
@@ -545,6 +626,10 @@ app.get("/player-runs/latest", async (req, res) => {
   try {
     const result = await buildLatestDeckResponse(userId);
     if (!result) {
+      const emptyResult = await buildEmptyDeckResponseIfPlayerExists(userId);
+      if (emptyResult) {
+        return res.json(emptyResult);
+      }
       return res.status(404).json({ error: "not_found" });
     }
 

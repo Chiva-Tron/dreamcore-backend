@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "prisma db seed",
+    "seed:content": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
@@ -29,5 +31,8 @@
   },
   "engines": {
     "node": ">=20.19"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
