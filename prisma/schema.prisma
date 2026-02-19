@@ -120,7 +120,7 @@ model Player {
 
   bestRun          Run?              @relation("PlayerBestRun", fields: [best_run_id], references: [id])
   runs             Run[]
-  leaderboard      Leaderboard?
+  leaderboard      Leaderboard[]
   telemetry_events TelemetryEvent[]
 
   @@index([best_score(sort: Desc)])
@@ -156,7 +156,7 @@ model Run {
 
   player           Player           @relation(fields: [player_id], references: [id])
   bestForPlayers   Player[]         @relation("PlayerBestRun")
-  leaderboardEntry Leaderboard?     @relation("LeaderboardBestRun")
+  leaderboardEntries Leaderboard[]
   run_events       RunEvent[]
   fraud_flags      FraudFlag[]
   telemetry_events TelemetryEvent[]
@@ -169,17 +169,21 @@ model Run {
 }
 
 model Leaderboard {
-  user_id     String    @id @db.VarChar(64)
-  player_id   String    @unique @db.Uuid
-  nickname    String    @db.VarChar(16)
-  best_score  Int       @default(0)
-  best_run_id String?   @unique @db.Uuid
-  updated_at  DateTime  @updatedAt @db.Timestamptz(6)
+  id         BigInt   @id @default(autoincrement())
+  run_id     String?  @unique @db.Uuid
+  player_id  String   @db.Uuid
+  user_id    String   @db.VarChar(64)
+  nickname   String   @db.VarChar(16)
+  score      Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
 
-  player  Player @relation(fields: [player_id], references: [id])
-  bestRun Run?   @relation("LeaderboardBestRun", fields: [best_run_id], references: [id])
+  player Player @relation(fields: [player_id], references: [id])
+  run    Run?   @relation(fields: [run_id], references: [id], onDelete: Cascade)
 
-  @@index([best_score(sort: Desc), updated_at(sort: Asc)])
+  @@index([score(sort: Desc), created_at(sort: Asc)])
+  @@index([player_id])
+  @@index([user_id])
   @@map("leaderboard")
 }
 

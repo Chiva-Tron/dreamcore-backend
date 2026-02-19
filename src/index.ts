@@ -23,6 +23,7 @@ const apiKey = process.env.API_KEY ?? "";
 const rateLimitWindowMs = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 10_000);
 const rateLimitMax = Number(process.env.RATE_LIMIT_MAX ?? 10);
 const MAX_RUN_TIME_MS = 24 * 60 * 60 * 1000;
+const LEADERBOARD_MAX_ENTRIES = 1000;
 
 if (!apiKey) {
   console.warn("API_KEY is not set");
@@ -290,14 +291,10 @@ app.post("/submit-run", async (req, res) => {
         }
       });
 
-      const leaderboard = await tx.leaderboard.findUnique({
-        where: { player_id: player.id }
-      });
-
       if (existingRun) {
         return {
           runId: existingRun.id,
-          bestScore: leaderboard ? leaderboard.best_score : payload.score
+          bestScore: player.best_score
         };
       }
 
@@ -327,19 +324,33 @@ app.post("/submit-run", async (req, res) => {
         }
       });
 
-      let bestScore = payload.score;
+      await tx.leaderboard.create({
+        data: {
+          run_id: run.id,
+          player_id: player.id,
+          user_id: payload.user_id,
+          nickname: payload.nickname,
+          score: payload.score
+        }
+      });
 
-      if (!leaderboard) {
-        await tx.leaderboard.create({
-          data: {
-            user_id: payload.user_id,
-            player_id: player.id,
-            nickname: payload.nickname,
-            best_score: payload.score,
-            best_run_id: run.id
+      const overflowRows = await tx.leaderboard.findMany({
+        orderBy: [{ score: "desc" }, { created_at: "asc" }],
+        skip: LEADERBOARD_MAX_ENTRIES,
+        select: { id: true }
+      });
+
+      if (overflowRows.length > 0) {
+        await tx.leaderboard.deleteMany({
+          where: {
+            id: { in: overflowRows.map((row) => row.id) }
           }
         });
+      }
 
+      const bestScore = Math.max(player.best_score, payload.score);
+
+      if (payload.score > player.best_score) {
         await tx.player.update({
           where: { id: player.id },
           data: {
@@ -347,25 +358,6 @@ app.post("/submit-run", async (req, res) => {
             best_run_id: run.id
           }
         });
-      } else if (payload.score > leaderboard.best_score) {
-        await tx.leaderboard.update({
-          where: { player_id: player.id },
-          data: {
-            nickname: payload.nickname,
-            best_score: payload.score,
-            best_run_id: run.id
-          }
-        });
-
-        await tx.player.update({
-          where: { id: player.id },
-          data: {
-            best_score: payload.score,
-            best_run_id: run.id
-          }
-        });
-      } else {
-        bestScore = leaderboard.best_score;
       }
 
       return { runId: run.id, bestScore };
@@ -473,11 +465,7 @@ async function buildLatestDeckResponse(userId: string) {
     where: { user_id: userId },
     select: {
       nickname: true,
-      leaderboard: {
-        select: {
-          best_run_id: true
-        }
-      }
+      best_run_id: true
     }
   });
 
@@ -508,7 +496,7 @@ async function buildLatestDeckResponse(userId: string) {
     created_at: Date;
   }> = [];
 
-  const bestRunId = player.leaderboard?.best_run_id;
+  const bestRunId = player.best_run_id;
   if (bestRunId) {
     const bestRun = await prisma.run.findUnique({
       where: { id: bestRunId },
@@ -705,24 +693,47 @@ app.get("/player-runs/latest", async (req, res) => {
 
 app.get("/leaderboard", async (req, res) => {
   const limitRaw = typeof req.query.limit === "string" ? Number(req.query.limit) : 50;
-  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
+  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 1000) : 50;
 
   try {
     const rows = await prisma.leaderboard.findMany({
-      orderBy: [{ best_score: "desc" }, { updated_at: "asc" }],
-      take: limit
+      orderBy: [{ score: "desc" }, { created_at: "asc" }],
+      take: limit,
+      include: {
+        run: {
+          select: {
+            end_deck: true,
+            end_relics: true,
+            current_floor: true,
+            run_result: true,
+            created_at: true
+          }
+        }
+      }
     });
 
     const items = rows.map((row: (typeof rows)[number], index: number) => ({
       rank: index + 1,
+      run_id: row.run_id,
       user_id: row.user_id,
       nickname: row.nickname,
-      best_score: row.best_score
+      score: row.score,
+      run_result: row.run?.run_result ?? null,
+      current_floor: row.run?.current_floor ?? null,
+      created_at: row.run ? row.run.created_at.toISOString() : null,
+      end_deck: row.run?.end_deck ?? null,
+      end_relics: row.run?.end_relics ?? null
     }));
 
     return res.json({ items });
   } catch (error) {
     console.error("leaderboard failed", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+      return res.status(503).json({
+        error: "schema_outdated",
+        details: ["run_prisma_migrate_deploy"]
+      });
+    }
     return res.status(500).json({ error: "internal_error" });
   }
 });
