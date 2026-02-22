@@ -224,7 +224,7 @@ function pickArray(value: unknown, keys: string[]) {
 }
 
 function normalizeDeckAndRelics(endDeck: unknown, endRelics: unknown) {
-  const deck = pickArray(endDeck, ["deck", "cards", "list", "end_deck", "endDeck"]);
+  const deck = pickArray(endDeck, ["deck", "cards", "items", "list", "end_deck", "endDeck"]);
   const relics = pickArray(endRelics, ["relics", "items", "list", "end_relics", "endRelics"]);
   return { deck, relics };
 }
