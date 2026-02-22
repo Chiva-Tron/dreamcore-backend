@@ -107,6 +107,128 @@ function isValidNicknameCharset(value: string): boolean {
   return /^[a-zA-Z0-9_]+$/.test(value);
 }
 
+function isValidRunId(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function maxFloorFromUnknown(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 1) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    let maxFloor: number | null = null;
+    for (const item of value) {
+      const candidate = maxFloorFromUnknown(item);
+      if (candidate !== null && (maxFloor === null || candidate > maxFloor)) {
+        maxFloor = candidate;
+      }
+    }
+    return maxFloor;
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  let maxFloor: number | null = null;
+  const record = value as Record<string, unknown>;
+  const floorKeys = ["floor", "current_floor", "currentFloor", "reached_floor", "reachedFloor"];
+
+  for (const key of floorKeys) {
+    const maybeFloor = record[key];
+    if (typeof maybeFloor === "number" && Number.isInteger(maybeFloor) && maybeFloor >= 1) {
+      if (maxFloor === null || maybeFloor > maxFloor) {
+        maxFloor = maybeFloor;
+      }
+    }
+  }
+
+  for (const nestedValue of Object.values(record)) {
+    const candidate = maxFloorFromUnknown(nestedValue);
+    if (candidate !== null && (maxFloor === null || candidate > maxFloor)) {
+      maxFloor = candidate;
+    }
+  }
+
+  return maxFloor;
+}
+
+function computeNormalizedFloor(currentFloor: number, floorEvents: unknown, nodesState: unknown): number {
+  if (Number.isInteger(currentFloor) && currentFloor >= 1) {
+    return currentFloor;
+  }
+
+  const inferredFromEvents = maxFloorFromUnknown(floorEvents);
+  const inferredFromNodes = maxFloorFromUnknown(nodesState);
+  const inferred = Math.max(inferredFromEvents ?? 0, inferredFromNodes ?? 0);
+
+  return inferred;
+}
+
+function getEffectiveRunFloor(run: {
+  current_floor: number;
+  floor_events?: unknown;
+  nodes_state?: unknown;
+} | null): number {
+  if (!run) {
+    return -1;
+  }
+
+  return computeNormalizedFloor(run.current_floor, run.floor_events, run.nodes_state);
+}
+
+function compareLeaderboardRows(
+  a: {
+    score: number;
+    created_at: Date;
+    run: { current_floor: number; created_at: Date; floor_events?: unknown; nodes_state?: unknown } | null;
+  },
+  b: {
+    score: number;
+    created_at: Date;
+    run: { current_floor: number; created_at: Date; floor_events?: unknown; nodes_state?: unknown } | null;
+  }
+): number {
+  const floorA = getEffectiveRunFloor(a.run);
+  const floorB = getEffectiveRunFloor(b.run);
+  if (floorA !== floorB) {
+    return floorB - floorA;
+  }
+
+  if (a.score !== b.score) {
+    return b.score - a.score;
+  }
+
+  const createdA = (a.run?.created_at ?? a.created_at).getTime();
+  const createdB = (b.run?.created_at ?? b.created_at).getTime();
+  return createdA - createdB;
+}
+
+function pickArray(value: unknown, keys: string[]) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of keys) {
+      const nested = record[key];
+      if (Array.isArray(nested)) {
+        return nested;
+      }
+    }
+  }
+
+  return [] as unknown[];
+}
+
+function normalizeDeckAndRelics(endDeck: unknown, endRelics: unknown) {
+  const deck = pickArray(endDeck, ["deck", "cards", "list", "end_deck", "endDeck"]);
+  const relics = pickArray(endRelics, ["relics", "items", "list", "end_relics", "endRelics"]);
+  return { deck, relics };
+}
+
 function validatePlayerUpsertPayload(payload: unknown): { ok: boolean; errors: string[]; data?: PlayerUpsertPayload } {
   const errors: string[] = [];
   if (!payload || typeof payload !== "object") {
@@ -188,6 +310,7 @@ function validateRunPayload(payload: unknown): { ok: boolean; errors: string[]; 
   const inputs_hash = typeof data.inputs_hash === "string" ? data.inputs_hash : undefined;
   const proof_hash = typeof data.proof_hash === "string" ? data.proof_hash : undefined;
   const flags = data.flags;
+  const normalizedFloor = computeNormalizedFloor(current_floor, floor_events, nodes_state);
 
   if (!user_id) errors.push("user_id_required");
   if (!nickname) errors.push("nickname_required");
@@ -200,7 +323,7 @@ function validateRunPayload(payload: unknown): { ok: boolean; errors: string[]; 
     errors.push("run_time_ms_invalid");
   }
   if (!version) errors.push("version_required");
-  if (!Number.isInteger(current_floor) || current_floor < 0) errors.push("current_floor_invalid");
+  if (!Number.isInteger(normalizedFloor) || normalizedFloor < 1) errors.push("current_floor_invalid");
   if (!start_class) errors.push("start_class_invalid");
   if (!isJsonValue(start_deck)) errors.push("start_deck_required");
   if (!isJsonValue(start_relics)) errors.push("start_relics_required");
@@ -237,7 +360,7 @@ function validateRunPayload(payload: unknown): { ok: boolean; errors: string[]; 
       run_seed,
       run_time_ms,
       version,
-      current_floor,
+      current_floor: normalizedFloor,
       start_class: start_class as "titan" | "arcane" | "umbralist" | "no_class",
       start_deck,
       start_relics,
@@ -287,14 +410,57 @@ app.post("/submit-run", async (req, res) => {
           run_result: payload.run_result
         },
         select: {
-          id: true
+          id: true,
+          score: true,
+          current_floor: true
         }
       });
 
       if (existingRun) {
+        const mergedScore = Math.max(existingRun.score, payload.score);
+        const mergedFloor = Math.max(existingRun.current_floor, payload.current_floor);
+
+        if (mergedScore !== existingRun.score || mergedFloor !== existingRun.current_floor) {
+          await tx.run.update({
+            where: { id: existingRun.id },
+            data: {
+              score: mergedScore,
+              current_floor: mergedFloor,
+              nickname_snapshot: payload.nickname,
+              run_time_ms: payload.run_time_ms,
+              version: payload.version,
+              end_deck: payload.end_deck as any,
+              end_relics: payload.end_relics as any,
+              floor_events: payload.floor_events as any,
+              nodes_state: payload.nodes_state as any,
+              flags: payload.flags as any,
+              inputs_hash: payload.inputs_hash,
+              proof_hash: payload.proof_hash
+            }
+          });
+
+          await tx.leaderboard.updateMany({
+            where: { run_id: existingRun.id },
+            data: {
+              nickname: payload.nickname,
+              score: mergedScore
+            }
+          });
+
+          if (mergedScore > player.best_score) {
+            await tx.player.update({
+              where: { id: player.id },
+              data: {
+                best_score: mergedScore,
+                best_run_id: existingRun.id
+              }
+            });
+          }
+        }
+
         return {
           runId: existingRun.id,
-          bestScore: player.best_score
+          bestScore: Math.max(player.best_score, mergedScore)
         };
       }
 
@@ -334,16 +500,32 @@ app.post("/submit-run", async (req, res) => {
         }
       });
 
-      const overflowRows = await tx.leaderboard.findMany({
-        orderBy: [{ score: "desc" }, { created_at: "asc" }],
-        skip: LEADERBOARD_MAX_ENTRIES,
-        select: { id: true }
+      const leaderboardRows = await tx.leaderboard.findMany({
+        select: {
+          id: true,
+          score: true,
+          created_at: true,
+          run: {
+            select: {
+              current_floor: true,
+              created_at: true,
+              floor_events: true,
+              nodes_state: true
+            }
+          }
+        }
       });
+
+      const overflowRows = leaderboardRows
+        .slice()
+        .sort(compareLeaderboardRows)
+        .slice(LEADERBOARD_MAX_ENTRIES)
+        .map((row) => row.id);
 
       if (overflowRows.length > 0) {
         await tx.leaderboard.deleteMany({
           where: {
-            id: { in: overflowRows.map((row) => row.id) }
+            id: { in: overflowRows }
           }
         });
       }
@@ -534,22 +716,6 @@ async function buildLatestDeckResponse(userId: string) {
     return null;
   }
 
-  const pickArray = (value: unknown, keys: string[]) => {
-    if (Array.isArray(value)) {
-      return value;
-    }
-    if (value && typeof value === "object") {
-      const record = value as Record<string, unknown>;
-      for (const key of keys) {
-        const nested = record[key];
-        if (Array.isArray(nested)) {
-          return nested;
-        }
-      }
-    }
-    return [] as unknown[];
-  };
-
   const candidates: Array<{
     id: string;
     end_deck: unknown;
@@ -591,26 +757,59 @@ async function buildLatestDeckResponse(userId: string) {
     }
   }
 
-  const chosenRun = candidates.find((run) => {
-    const deck = pickArray(run.end_deck, ["deck", "cards", "list"]);
-    const relics = pickArray(run.end_relics, ["relics", "items", "list"]);
-    return deck.length > 0 || relics.length > 0;
-  });
+  const chosenRun = candidates
+    .map((run) => {
+      const { deck, relics } = normalizeDeckAndRelics(run.end_deck, run.end_relics);
+      const signal = deck.length > 0 ? 2 : relics.length > 0 ? 1 : 0;
+      return { run, signal, deck, relics };
+    })
+    .sort((a, b) => {
+      if (a.signal !== b.signal) {
+        return b.signal - a.signal;
+      }
+      return b.run.created_at.getTime() - a.run.created_at.getTime();
+    })[0];
 
-  if (!chosenRun) {
+  if (!chosenRun || chosenRun.signal === 0) {
     return null;
   }
-
-  const deck = pickArray(chosenRun.end_deck, ["deck", "cards", "list"]);
-  const relics = pickArray(chosenRun.end_relics, ["relics", "items", "list"]);
 
   return {
     user_id: userId,
     nickname: player.nickname,
+    deck: chosenRun.deck,
+    relics: chosenRun.relics,
+    source_run_id: chosenRun.run.id,
+    updated_at: chosenRun.run.created_at.toISOString()
+  };
+}
+
+async function buildDeckResponseByRunId(runId: string) {
+  const run = await prisma.run.findUnique({
+    where: { id: runId },
+    select: {
+      id: true,
+      user_id: true,
+      nickname_snapshot: true,
+      end_deck: true,
+      end_relics: true,
+      created_at: true
+    }
+  });
+
+  if (!run) {
+    return null;
+  }
+
+  const { deck, relics } = normalizeDeckAndRelics(run.end_deck, run.end_relics);
+
+  return {
+    run_id: run.id,
+    user_id: run.user_id,
+    nickname: run.nickname_snapshot,
     deck,
     relics,
-    source_run_id: chosenRun.id,
-    updated_at: chosenRun.created_at.toISOString()
+    updated_at: run.created_at.toISOString()
   };
 }
 
@@ -706,6 +905,44 @@ app.get("/runs/latest", async (req, res) => {
   }
 });
 
+app.get("/runs/:run_id/deck", async (req, res) => {
+  const runId = typeof req.params.run_id === "string" ? req.params.run_id.trim() : "";
+  if (!isValidRunId(runId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["run_id_invalid"] });
+  }
+
+  try {
+    const result = await buildDeckResponseByRunId(runId);
+    if (!result) {
+      return res.status(404).json({ error: "not_found" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error("get run deck failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.get("/run/:run_id/deck", async (req, res) => {
+  const runId = typeof req.params.run_id === "string" ? req.params.run_id.trim() : "";
+  if (!isValidRunId(runId)) {
+    return res.status(400).json({ error: "validation_failed", details: ["run_id_invalid"] });
+  }
+
+  try {
+    const result = await buildDeckResponseByRunId(runId);
+    if (!result) {
+      return res.status(404).json({ error: "not_found" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error("get run deck alias failed", error);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
 app.get("/run/latest", async (req, res) => {
   const userId = typeof req.query.user_id === "string" ? req.query.user_id.trim() : "";
   if (!isValidUserId(userId)) {
@@ -758,14 +995,15 @@ app.get("/leaderboard", async (req, res) => {
 
   try {
     const rows = await prisma.leaderboard.findMany({
-      orderBy: [{ score: "desc" }, { created_at: "asc" }],
-      take: limit,
+      take: LEADERBOARD_MAX_ENTRIES,
       include: {
         run: {
           select: {
             end_deck: true,
             end_relics: true,
             current_floor: true,
+            floor_events: true,
+            nodes_state: true,
             run_result: true,
             created_at: true
           }
@@ -773,14 +1011,16 @@ app.get("/leaderboard", async (req, res) => {
       }
     });
 
-    const items = rows.map((row: (typeof rows)[number], index: number) => ({
+    const sortedRows = rows.slice().sort(compareLeaderboardRows).slice(0, limit);
+
+    const items = sortedRows.map((row: (typeof sortedRows)[number], index: number) => ({
       rank: index + 1,
       run_id: row.run_id,
       user_id: row.user_id,
       nickname: row.nickname,
       score: row.score,
       run_result: row.run?.run_result ?? null,
-      current_floor: row.run?.current_floor ?? null,
+      current_floor: row.run ? getEffectiveRunFloor(row.run) : null,
       created_at: row.run ? row.run.created_at.toISOString() : null,
       end_deck: row.run?.end_deck ?? null,
       end_relics: row.run?.end_relics ?? null
