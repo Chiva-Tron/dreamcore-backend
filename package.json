@@ -12,18 +12,22 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
     "seed:content": "tsx prisma/seed.ts",
-    "seed:ranking": "tsx prisma/seed-ranking.ts"
+    "seed:ranking": "tsx prisma/seed-ranking.ts",
+    "cleanup:idempotency": "tsx scripts/cleanup-idempotency-keys.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.3.0",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.5",
     "express": "^4.18.3",
     "express-rate-limit": "^7.1.5",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.18.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.24",
     "@types/pg": "^8.16.0",
     "prisma": "^7.3.0",
