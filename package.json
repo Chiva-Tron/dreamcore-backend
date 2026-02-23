@@ -13,12 +13,15 @@
     "prisma:seed": "prisma db seed",
     "seed:content": "tsx prisma/seed.ts",
     "seed:ranking": "tsx prisma/seed-ranking.ts",
+    "seed:matias": "tsx prisma/seed-matias.ts",
+    "import:events": "tsx prisma/import-events-csv.ts",
     "cleanup:idempotency": "tsx scripts/cleanup-idempotency-keys.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.3.0",
     "bcryptjs": "^3.0.3",
+    "csv-parse": "^6.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.18.3",
     "express-rate-limit": "^7.1.5",

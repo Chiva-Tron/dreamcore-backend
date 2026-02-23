@@ -291,12 +291,11 @@ model Event {
   event_class            EventClass
   name_es                String     @db.VarChar(128)
   name_en                String     @db.VarChar(128)
-  enemy_skill            String?    @db.VarChar(128)
-  enemy_explanation      String?    @db.Text
   deck                   Json       @db.JsonB
   image                  String?    @db.VarChar(256)
   scene                  String?    @db.VarChar(128)
   health                 Int        @default(0)
+  equipped_relics        Int        @default(0)
   reward_multiplier      Int        @default(0)
   relic_reward           Int?
   starting_gold_coins    Int        @default(0)

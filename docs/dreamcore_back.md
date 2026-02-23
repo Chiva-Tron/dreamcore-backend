@@ -1437,3 +1437,16 @@ Para claves de idempotencia en escrituras críticas:
 - [ ] Cron de cleanup idempotency activo (`npm run cleanup:idempotency`).
 - [ ] `JWT_SECRET` fuerte y rotación definida.
 - [ ] Healthcheck y restart policy del proceso configurados.
+
+## 18.6 Campo de contenido para enemigos con reliquias
+
+Se agrega soporte en `events` para `equipped_relics` (`int`, default `0`).
+
+Semántica:
+
+- `0` => enemigo sin reliquias equipadas.
+- `N > 0` => el cliente/juego debe asignar `N` reliquias al enemigo según su pool/reglas.
+
+Compatibilidad:
+
+- Si una fila vieja no trae el campo, se normaliza a `0` en pipeline de sanitización.
