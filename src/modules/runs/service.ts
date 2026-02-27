@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { HttpError } from "../../lib/http-error";
 import { prisma } from "../../lib/prisma";
 import { AuthContext } from "../../lib/auth-context";
+import { calculateNetherPointsGain, deriveTiersFromNetherPoints } from "../player/progression";
 import {
   validateAbandonPayload,
   validateFinishPayload,
@@ -132,6 +133,10 @@ async function ensurePlayer(auth: AuthContext, requireNotBanned = false) {
       nickname: true,
       best_score: true,
       best_run_id: true,
+      nether_points: true,
+      cards_tier: true,
+      relics_tier: true,
+      classes_tier: true,
       is_banned: true
     }
   });
@@ -441,6 +446,9 @@ export async function finishRun(params: {
 
   const finishResult = await prisma.$transaction(async (tx) => {
     const finishedAt = new Date();
+    const netherPointsGained = calculateNetherPointsGain(validated.score, validated.current_floor);
+    const nextNetherPoints = player.nether_points + netherPointsGained;
+    const nextTiers = deriveTiersFromNetherPoints(nextNetherPoints);
 
     const updatedRun = await tx.run.update({
       where: { id: run.id },
@@ -486,31 +494,43 @@ export async function finishRun(params: {
     });
 
     const isNewBest = validated.score > player.best_score;
-    let bestScore = player.best_score;
-    let bestRunId = player.best_run_id;
-
-    if (isNewBest) {
-      const updatedPlayer = await tx.player.update({
-        where: { id: player.id },
-        data: {
-          best_score: validated.score,
-          best_run_id: run.id
-        },
-        select: {
-          best_score: true,
-          best_run_id: true
-        }
-      });
-      bestScore = updatedPlayer.best_score;
-      bestRunId = updatedPlayer.best_run_id;
-    }
+    const updatedPlayer = await tx.player.update({
+      where: { id: player.id },
+      data: {
+        nether_points: nextNetherPoints,
+        cards_tier: nextTiers.cardsTier,
+        relics_tier: nextTiers.relicsTier,
+        classes_tier: nextTiers.classesTier,
+        ...(isNewBest
+          ? {
+              best_score: validated.score,
+              best_run_id: run.id
+            }
+          : {})
+      },
+      select: {
+        best_score: true,
+        best_run_id: true,
+        nether_points: true,
+        cards_tier: true,
+        relics_tier: true,
+        classes_tier: true
+      }
+    });
 
     return {
       updatedRun,
       leaderboard: {
-        best_score: bestScore,
+        best_score: updatedPlayer.best_score,
         is_new_best: isNewBest,
-        best_run_id: bestRunId
+        best_run_id: updatedPlayer.best_run_id
+      },
+      progression: {
+        nether_points_gained: netherPointsGained,
+        nether_points: updatedPlayer.nether_points,
+        cards_tier: updatedPlayer.cards_tier,
+        relics_tier: updatedPlayer.relics_tier,
+        classes_tier: updatedPlayer.classes_tier
       }
     };
   });
@@ -524,7 +544,8 @@ export async function finishRun(params: {
         result: finishResult.updatedRun.result,
         finished_at: finishResult.updatedRun.finished_at?.toISOString() ?? null
       },
-      leaderboard: finishResult.leaderboard
+      leaderboard: finishResult.leaderboard,
+      progression: finishResult.progression
     },
     meta: buildMeta(params.requestId)
   };

@@ -15,6 +15,7 @@
     "seed:ranking": "tsx prisma/seed-ranking.ts",
     "seed:matias": "tsx prisma/seed-matias.ts",
     "import:events": "tsx prisma/import-events-csv.ts",
+    "import:cards-relics": "tsx prisma/import-cards-relics-csv.ts",
     "cleanup:idempotency": "tsx scripts/cleanup-idempotency-keys.ts"
   },
   "dependencies": {

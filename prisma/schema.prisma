@@ -93,6 +93,10 @@ model Player {
   nickname    String   @db.VarChar(16)
   best_score  Int      @default(0)
   best_run_id String?  @db.Uuid
+  nether_points Int    @default(0)
+  cards_tier   Int     @default(1)
+  relics_tier  Int     @default(1)
+  classes_tier Int     @default(1)
   is_banned   Boolean  @default(false)
   ban_reason  String?  @db.Text
   created_at  DateTime @default(now()) @db.Timestamptz(6)

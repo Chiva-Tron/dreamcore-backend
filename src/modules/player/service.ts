@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { HttpError } from "../../lib/http-error";
 import { AuthContext } from "../../lib/auth-context";
+import { getUnlockedClasses, normalizePlayerProgression } from "./progression";
 
 type PatchMeInput = {
   nickname: string;
@@ -67,6 +68,10 @@ export async function getMeState(auth: AuthContext) {
       nickname: true,
       best_score: true,
       best_run_id: true,
+      nether_points: true,
+      cards_tier: true,
+      relics_tier: true,
+      classes_tier: true,
       is_banned: true,
       updated_at: true
     }
@@ -102,12 +107,24 @@ export async function getMeState(auth: AuthContext) {
     }
   });
 
+  const progression = normalizePlayerProgression({
+    nether_points: player.nether_points,
+    cards_tier: player.cards_tier,
+    relics_tier: player.relics_tier,
+    classes_tier: player.classes_tier
+  });
+
   return {
     player: {
       user_id: player.user_id,
       nickname: player.nickname,
       best_score: player.best_score,
       best_run_id: player.best_run_id,
+      nether_points: progression.nether_points,
+      cards_tier: progression.cards_tier,
+      relics_tier: progression.relics_tier,
+      classes_tier: progression.classes_tier,
+      unlocked_classes: getUnlockedClasses(progression.classes_tier),
       is_banned: player.is_banned,
       updated_at: player.updated_at.toISOString()
     },

@@ -114,6 +114,10 @@ sin pérdida de progreso ni forks de run.
 - `nickname` (string)
 - `best_score` (int)
 - `best_run_id` (uuid nullable)
+- `nether_points` (int, default `0`)
+- `cards_tier` (int, default `1`)
+- `relics_tier` (int, default `1`)
+- `classes_tier` (int, default `1`)
 - `is_banned` (bool)
 - `ban_reason` (string nullable)
 - `created_at`, `updated_at`
@@ -438,6 +442,8 @@ Response 200:
 
 ## 5.3.1 `GET /player/me/state`
 
+Incluye estado de progresión roguelite por cuenta (puntos y tiers de desbloqueo).
+
 Response 200:
 
 ```json
@@ -449,6 +455,11 @@ Response 200:
       "nickname": "Player",
       "best_score": 123,
       "best_run_id": "run_uuid_or_null",
+      "nether_points": 42,
+      "cards_tier": 2,
+      "relics_tier": 2,
+      "classes_tier": 1,
+      "unlocked_classes": ["no_class"],
       "is_banned": false,
       "updated_at": "2026-02-22T12:00:00.000Z"
     },
@@ -473,6 +484,11 @@ Si existe run activa:
       "user_id": "usr_uuid",
       "nickname": "Player",
       "best_score": 123,
+      "nether_points": 42,
+      "cards_tier": 2,
+      "relics_tier": 2,
+      "classes_tier": 1,
+      "unlocked_classes": ["no_class"],
       "is_banned": false
     },
     "active_run": {
@@ -564,6 +580,12 @@ Response 200:
 ```
 
 ## 5.4.2 `GET /content/:table` (`cards|relics|events`)
+
+Reglas de visibilidad por progresión:
+
+- `cards`: se filtran por `player.cards_tier`.
+- `relics`: se filtran por `player.relics_tier`.
+- `events`: se entregan completos (sin filtro por tier en v1).
 
 Response 200:
 
@@ -793,6 +815,13 @@ Response 200:
       "best_score": 120,
       "is_new_best": true,
       "best_run_id": "run_uuid"
+    },
+    "progression": {
+      "nether_points_gained": 3,
+      "nether_points": 42,
+      "cards_tier": 2,
+      "relics_tier": 2,
+      "classes_tier": 1
     }
   },
   "meta": {
@@ -815,6 +844,7 @@ Errores:
 Garantía transaccional (obligatoria):
 
 - el cierre de run (`status/result/finished_at`), la proyección a `leaderboard` y la actualización de `players.best_score/best_run_id` ocurren en una única transacción lógica.
+- en la misma transacción se actualiza progresión (`nether_points`, `cards_tier`, `relics_tier`, `classes_tier`).
 - si cualquier paso falla, se revierte todo (sin estado parcial visible).
 - ante retry con mismo `x-idempotency-key`, devolver replay 1:1 de la respuesta previamente confirmada.
 
@@ -1450,3 +1480,37 @@ Semántica:
 Compatibilidad:
 
 - Si una fila vieja no trae el campo, se normaliza a `0` en pipeline de sanitización.
+
+## 18.7 Progresión roguelite (nether points + tiers)
+
+Implementado en runtime (23-02-2026):
+
+- `players` incorpora:
+  - `nether_points` (default `0`)
+  - `cards_tier` (default `1`)
+  - `relics_tier` (default `1`)
+  - `classes_tier` (default `1`)
+- al cerrar una run (`POST /runs/:run_id/finish`) el backend:
+  - calcula `nether_points_gained` en base a `score` y `current_floor`;
+  - acumula `nether_points`;
+  - recalcula tiers y los persiste en `players` dentro de la misma transacción del cierre de run.
+- `GET /player/me/state` devuelve los campos de progresión y `unlocked_classes`.
+- `GET /content/cards` y `GET /content/relics` aplican filtrado por tier del jugador autenticado.
+
+Reglas actuales (v1 implementada):
+
+- Ganancia por run: `max(1, floor(score / 100) + floor(current_floor / 5))`.
+- Umbrales de tier:
+  - `cards_tier`: `[0, 40, 100, 180]`
+  - `relics_tier`: `[0, 30, 80, 150]`
+  - `classes_tier`: `[0, 60, 140, 240]`
+- Desbloqueo de clases por tier:
+  - tier 1: `no_class`
+  - tier 2: `no_class`, `titan`
+  - tier 3: `no_class`, `titan`, `arcane`
+  - tier 4: `no_class`, `titan`, `arcane`, `umbralist`
+
+Notas de compatibilidad:
+
+- El mapeo de tier de cartas/reliquias se deriva del campo `tier` de contenido para soportar valores legacy (ej: `Invocacion Inicial`, `inicial`, numéricos).
+- `events` permanece sin gating por tier en v1.

@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "players" ADD COLUMN     "cards_tier" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "classes_tier" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "nether_points" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "relics_tier" INTEGER NOT NULL DEFAULT 1;
