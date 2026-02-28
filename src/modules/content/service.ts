@@ -50,6 +50,63 @@ function isMissingEventColumnError(error: unknown) {
   return /equipped_relics|column.+does not exist/i.test(message);
 }
 
+function toOptionalText(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  return null;
+}
+
+function toEventClass(value: unknown): string {
+  if (typeof value !== "string") {
+    return "mystery";
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === "enemy" ||
+    normalized === "boss" ||
+    normalized === "rest" ||
+    normalized === "shop" ||
+    normalized === "sacrifice" ||
+    normalized === "upgrade" ||
+    normalized === "beginning" ||
+    normalized === "exit" ||
+    normalized === "mystery"
+  ) {
+    return normalized;
+  }
+
+  return "mystery";
+}
+
+function toFallbackEventResponse(row: FallbackEventRow): Record<string, unknown> {
+  return {
+    id: toNonNegativeInt(row.id, 0),
+    event_class: toEventClass(row.event_class),
+    name_es: toOptionalText(row.name_es) ?? "",
+    name_en: toOptionalText(row.name_en) ?? toOptionalText(row.name_es) ?? "",
+    deck: row.deck ?? [],
+    image: toOptionalText(row.image),
+    scene: toOptionalText(row.scene),
+    health: toNonNegativeInt(row.health, 0),
+    equipped_relics: 0,
+    reward_multiplier: toNonNegativeInt(row.reward_multiplier, 0),
+    relic_reward:
+      row.relic_reward === null || row.relic_reward === undefined
+        ? null
+        : toNonNegativeInt(row.relic_reward, 0),
+    starting_gold_coins: toNonNegativeInt(row.starting_gold_coins, 0),
+    starting_cards_in_hand: toNonNegativeInt(row.starting_cards_in_hand, 0),
+    cards_per_turn: toNonNegativeInt(row.cards_per_turn, 0),
+    discards_per_turn: toNonNegativeInt(row.discards_per_turn, 0),
+    special_conditions: toOptionalText(row.special_conditions),
+    content_version_id: String(row.content_version_id ?? "")
+  };
+}
+
 function normalizeEventForResponse(event: Record<string, unknown>) {
   const snakeCaseValue = event.equipped_relics;
   const camelCaseValue = event.equippedRelics;
@@ -72,13 +129,16 @@ async function findEventsByContentVersion(contentVersionId: string) {
       orderBy: { id: "asc" }
     });
   } catch (error) {
-    if (!isMissingEventColumnError(error)) {
-      throw error;
+    if (isMissingEventColumnError(error)) {
+      console.warn(
+        "events query fallback activated: equipped_relics column missing or inaccessible; defaulting equipped_relics to 0"
+      );
+    } else {
+      console.warn(
+        "events query fallback activated after prisma.event.findMany error; using raw SQL and safe normalization",
+        error
+      );
     }
-
-    console.warn(
-      "events query fallback activated: equipped_relics column missing or inaccessible; defaulting equipped_relics to 0"
-    );
 
     const fallbackRows = await prisma.$queryRaw<FallbackEventRow[]>`
       SELECT
@@ -103,10 +163,7 @@ async function findEventsByContentVersion(contentVersionId: string) {
       ORDER BY id ASC
     `;
 
-    return fallbackRows.map((row) => ({
-      ...row,
-      equipped_relics: 0
-    }));
+    return fallbackRows.map((row) => toFallbackEventResponse(row));
   }
 }
 

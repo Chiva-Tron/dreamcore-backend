@@ -295,21 +295,21 @@ model Event {
   event_class            EventClass
   name_es                String     @db.VarChar(128)
   name_en                String     @db.VarChar(128)
-  deck                   Json       @db.JsonB
+  deck                   Json?      @db.JsonB
   image                  String?    @db.VarChar(256)
   scene                  String?    @db.VarChar(128)
-  health                 Int        @default(0)
-  equipped_relics        Int        @default(0)
-  reward_multiplier      Int        @default(0)
+  health                 Int?       @default(0)
+  equipped_relics        Int?       @default(0)
+  reward_multiplier      Int?       @default(0)
   relic_reward           Int?
-  starting_gold_coins    Int        @default(0)
-  starting_cards_in_hand Int        @default(0)
-  cards_per_turn         Int        @default(0)
-  discards_per_turn      Int        @default(0)
+  starting_gold_coins    Int?       @default(0)
+  starting_cards_in_hand Int?       @default(0)
+  cards_per_turn         Int?       @default(0)
+  discards_per_turn      Int?       @default(0)
   special_conditions     String?    @db.Text
-  content_version_id     String     @db.Uuid
+  content_version_id     String?    @db.Uuid
 
-  content_version ContentVersion @relation(fields: [content_version_id], references: [id], onDelete: Restrict)
+  content_version ContentVersion? @relation(fields: [content_version_id], references: [id], onDelete: Restrict)
 
   @@index([content_version_id])
   @@map("events")
