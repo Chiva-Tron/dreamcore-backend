@@ -44,6 +44,7 @@ enum EventClass {
   sacrifice
   upgrade
   beginning
+  initial_picks
   exit
   mystery
 }

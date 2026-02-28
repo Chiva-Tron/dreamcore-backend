@@ -33,6 +33,7 @@ VALID_EVENT_CLASSES = {
     "sacrifice",
     "upgrade",
     "beginning",
+    "initial_picks",
     "exit",
     "mystery",
 }

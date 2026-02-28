@@ -7,6 +7,7 @@ import { parse } from "csv-parse/sync";
 import { Pool } from "pg";
 
 type CsvRow = {
+  [key: string]: string | undefined;
   id?: string;
   event_class?: string;
   name_es?: string;
@@ -25,6 +26,13 @@ type CsvRow = {
   special_conditions?: string;
 };
 
+const equippedRelicsHeaderAliases = [
+  "equipped_relics",
+  "equippedRelics",
+  "equipped relics",
+  "equipped-relics"
+] as const;
+
 const allowedEventClass = new Set<EventClass>([
   "enemy",
   "boss",
@@ -33,6 +41,7 @@ const allowedEventClass = new Set<EventClass>([
   "sacrifice",
   "upgrade",
   "beginning",
+  "initial_picks",
   "exit",
   "mystery"
 ]);
@@ -93,6 +102,17 @@ function toEventClass(value: string | undefined): EventClass | null {
   return allowedEventClass.has(normalized) ? normalized : null;
 }
 
+function getFirstDefinedValue(row: CsvRow, keys: readonly string[]): string | undefined {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== undefined) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
 async function resolveContentVersionId(prisma: PrismaClient): Promise<string> {
   const active = await prisma.contentVersion.findFirst({
     where: { is_active: true },
@@ -143,6 +163,17 @@ async function main() {
       trim: true
     }) as CsvRow[];
 
+    const firstRow = rows[0] ?? {};
+    const hasEquippedRelicsColumn = equippedRelicsHeaderAliases.some(
+      (header) => firstRow[header] !== undefined
+    );
+
+    if (!hasEquippedRelicsColumn) {
+      console.warn(
+        `Events CSV missing equipped_relics column. Supported headers: ${equippedRelicsHeaderAliases.join(", ")}. Defaulting equipped_relics to 0.`
+      );
+    }
+
     const contentVersionId = await resolveContentVersionId(prisma);
 
     let upserted = 0;
@@ -159,6 +190,7 @@ async function main() {
 
       const nameEs = (row.name_es ?? "").trim() || `event_${id}`;
       const nameEn = (row.name_en ?? "").trim() || nameEs;
+      const equippedRelicsValue = getFirstDefinedValue(row, equippedRelicsHeaderAliases);
 
       await prisma.event.upsert({
         where: { id },
@@ -171,7 +203,7 @@ async function main() {
           image: toOptionalText(row.image),
           scene: toOptionalText(row.scene),
           health: toIntOrDefault(row.health, 0),
-          equipped_relics: toIntOrDefault(row.equipped_relics, 0),
+          equipped_relics: toIntOrDefault(equippedRelicsValue, 0),
           reward_multiplier: toIntOrDefault(row.reward_multiplier, 0),
           relic_reward: toOptionalInt(row.relic_reward),
           starting_gold_coins: toIntOrDefault(row.starting_gold_coins, 0),
@@ -189,7 +221,7 @@ async function main() {
           image: toOptionalText(row.image),
           scene: toOptionalText(row.scene),
           health: toIntOrDefault(row.health, 0),
-          equipped_relics: toIntOrDefault(row.equipped_relics, 0),
+          equipped_relics: toIntOrDefault(equippedRelicsValue, 0),
           reward_multiplier: toIntOrDefault(row.reward_multiplier, 0),
           relic_reward: toOptionalInt(row.relic_reward),
           starting_gold_coins: toIntOrDefault(row.starting_gold_coins, 0),
