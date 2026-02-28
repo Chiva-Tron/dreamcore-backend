@@ -5,21 +5,109 @@ import { isCardUnlocked, isRelicUnlocked } from "../player/progression";
 
 type ContentTable = "cards" | "relics" | "events";
 
+type FallbackEventRow = {
+  id: number;
+  event_class: string;
+  name_es: string;
+  name_en: string;
+  deck: unknown;
+  image: string | null;
+  scene: string | null;
+  health: number;
+  reward_multiplier: number;
+  relic_reward: number | null;
+  starting_gold_coins: number;
+  starting_cards_in_hand: number;
+  cards_per_turn: number;
+  discards_per_turn: number;
+  special_conditions: string | null;
+  content_version_id: string;
+};
+
+function toNonNegativeInt(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.trunc(value));
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, parsed);
+    }
+  }
+
+  return fallback;
+}
+
+function isMissingEventColumnError(error: unknown) {
+  const code = (error as { code?: string })?.code;
+  const message = (error as { message?: string })?.message ?? "";
+
+  if (code === "P2022") {
+    return true;
+  }
+
+  return /equipped_relics|column.+does not exist/i.test(message);
+}
+
 function normalizeEventForResponse(event: Record<string, unknown>) {
   const snakeCaseValue = event.equipped_relics;
   const camelCaseValue = event.equippedRelics;
 
-  const equippedRelics =
-    typeof snakeCaseValue === "number"
-      ? snakeCaseValue
-      : typeof camelCaseValue === "number"
-        ? camelCaseValue
-        : 0;
+  const equippedRelics = toNonNegativeInt(
+    snakeCaseValue,
+    toNonNegativeInt(camelCaseValue, 0)
+  );
 
   return {
     ...event,
     equipped_relics: equippedRelics
   };
+}
+
+async function findEventsByContentVersion(contentVersionId: string) {
+  try {
+    return await prisma.event.findMany({
+      where: { content_version_id: contentVersionId },
+      orderBy: { id: "asc" }
+    });
+  } catch (error) {
+    if (!isMissingEventColumnError(error)) {
+      throw error;
+    }
+
+    console.warn(
+      "events query fallback activated: equipped_relics column missing or inaccessible; defaulting equipped_relics to 0"
+    );
+
+    const fallbackRows = await prisma.$queryRaw<FallbackEventRow[]>`
+      SELECT
+        id,
+        event_class,
+        name_es,
+        name_en,
+        deck,
+        image,
+        scene,
+        health,
+        reward_multiplier,
+        relic_reward,
+        starting_gold_coins,
+        starting_cards_in_hand,
+        cards_per_turn,
+        discards_per_turn,
+        special_conditions,
+        content_version_id
+      FROM events
+      WHERE content_version_id = ${contentVersionId}
+      ORDER BY id ASC
+    `;
+
+    return fallbackRows.map((row) => ({
+      ...row,
+      equipped_relics: 0
+    }));
+  }
 }
 
 async function ensureAuthorized(auth: AuthContext) {
@@ -72,10 +160,7 @@ export async function getBundle(auth: AuthContext) {
       where: { content_version_id: activeVersion.id },
       orderBy: { id: "asc" }
     }),
-    prisma.event.findMany({
-      where: { content_version_id: activeVersion.id },
-      orderBy: { id: "asc" }
-    })
+    findEventsByContentVersion(activeVersion.id)
   ]);
 
   const filteredCards = cards.filter((card) => isCardUnlocked(card.tier, player.cards_tier));
@@ -131,10 +216,7 @@ export async function getContentTable(auth: AuthContext, tableRaw: string) {
     };
   }
 
-  const events = await prisma.event.findMany({
-    where: { content_version_id: activeVersion.id },
-    orderBy: { id: "asc" }
-  });
+  const events = await findEventsByContentVersion(activeVersion.id);
 
   return {
     table,
