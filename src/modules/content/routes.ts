@@ -19,7 +19,12 @@ contentRouter.get(
   "/:table",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const data = await getContentTable(res.locals.auth, String(req.params.table ?? ""));
-    return sendOk(res, 200, data);
+    const result = await getContentTable(
+      res.locals.auth,
+      String(req.params.table ?? ""),
+      req.query.limit,
+      req.query.page
+    );
+    return sendOk(res, 200, result.data, result.meta);
   })
 );

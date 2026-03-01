@@ -581,11 +581,15 @@ Response 200:
 
 ## 5.4.2 `GET /content/:table` (`cards|relics|events`)
 
-Reglas de visibilidad por progresión:
+Parámetros de query opcionales:
 
-- `cards`: se filtran por `player.cards_tier`.
-- `relics`: se filtran por `player.relics_tier`.
-- `events`: se entregan completos (sin filtro por tier en v1).
+- `limit` (entero, `1..1000`, default `100`)
+- `page` (entero, mínimo `1`, default `1`)
+
+Reglas de visibilidad:
+
+- `cards`, `relics` y `events` se devuelven completos para la `content_version` activa.
+- El filtrado por progresión aplica al endpoint `GET /content/bundle`.
 
 Response 200:
 
@@ -600,7 +604,11 @@ Response 200:
   },
   "meta": {
     "request_id": "uuid",
-    "server_time": "2026-02-22T12:00:00.000Z"
+    "server_time": "2026-02-22T12:00:00.000Z",
+    "total": 188,
+    "page": 1,
+    "page_size": 100,
+    "next_cursor": "2"
   }
 }
 ```
@@ -1495,7 +1503,8 @@ Implementado en runtime (23-02-2026):
   - acumula `nether_points`;
   - recalcula tiers y los persiste en `players` dentro de la misma transacción del cierre de run.
 - `GET /player/me/state` devuelve los campos de progresión y `unlocked_classes`.
-- `GET /content/cards` y `GET /content/relics` aplican filtrado por tier del jugador autenticado.
+- `GET /content/bundle` aplica filtrado por tier del jugador autenticado para `cards` y `relics`.
+- `GET /content/:table` devuelve contenido completo de la versión activa con paginación (`limit/page`).
 
 Reglas actuales (v1 implementada):
 

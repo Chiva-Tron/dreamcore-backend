@@ -5,6 +5,26 @@ import { isCardUnlocked, isRelicUnlocked } from "../player/progression";
 
 type ContentTable = "cards" | "relics" | "events";
 
+const DEFAULT_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 1000;
+
+type ContentTableMeta = {
+  total: number;
+  page: number;
+  page_size: number;
+  next_cursor: string | null;
+};
+
+type ContentTableResult = {
+  data: {
+    table: ContentTable;
+    content_version: string;
+    checksum_sha256: string;
+    items: unknown[];
+  };
+  meta: ContentTableMeta;
+};
+
 type FallbackEventRow = {
   id: number;
   event_class: string;
@@ -240,45 +260,112 @@ function parseTable(value: string): ContentTable {
   throw new HttpError(400, "unknown_content_table", "Unknown content table");
 }
 
-export async function getContentTable(auth: AuthContext, tableRaw: string) {
-  const player = await ensureAuthorized(auth);
+function parsePagination(rawLimit: unknown, rawPage: unknown) {
+  const limit =
+    typeof rawLimit === "string" && rawLimit.trim() ? Number.parseInt(rawLimit, 10) : DEFAULT_PAGE_SIZE;
+  const page = typeof rawPage === "string" && rawPage.trim() ? Number.parseInt(rawPage, 10) : 1;
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_PAGE_SIZE) {
+    throw new HttpError(400, "validation_failed", "Payload inválido", [
+      { field: "limit", message: `range_1_${MAX_PAGE_SIZE}` }
+    ]);
+  }
+
+  if (!Number.isInteger(page) || page < 1) {
+    throw new HttpError(400, "validation_failed", "Payload inválido", [
+      { field: "page", message: "min_1" }
+    ]);
+  }
+
+  return {
+    limit,
+    page,
+    offset: (page - 1) * limit
+  };
+}
+
+function buildPaginationMeta(total: number, page: number, pageSize: number, returnedItems: number): ContentTableMeta {
+  const consumed = (page - 1) * pageSize + returnedItems;
+
+  return {
+    total,
+    page,
+    page_size: pageSize,
+    next_cursor: consumed < total ? String(page + 1) : null
+  };
+}
+
+export async function getContentTable(
+  auth: AuthContext,
+  tableRaw: string,
+  rawLimit: unknown,
+  rawPage: unknown
+): Promise<ContentTableResult> {
+  await ensureAuthorized(auth);
   const table = parseTable(tableRaw);
   const activeVersion = await getActiveVersion();
+  const pagination = parsePagination(rawLimit, rawPage);
 
   if (table === "cards") {
-    const cards = await prisma.card.findMany({
-      where: { content_version_id: activeVersion.id },
-      orderBy: { id: "asc" }
-    });
+    const [cards, total] = await Promise.all([
+      prisma.card.findMany({
+        where: { content_version_id: activeVersion.id },
+        orderBy: { id: "asc" },
+        take: pagination.limit,
+        skip: pagination.offset
+      }),
+      prisma.card.count({ where: { content_version_id: activeVersion.id } })
+    ]);
 
     return {
-      table,
-      content_version: activeVersion.version,
-      checksum_sha256: activeVersion.checksum_sha256,
-      items: cards.filter((card) => isCardUnlocked(card.tier, player.cards_tier))
+      data: {
+        table,
+        content_version: activeVersion.version,
+        checksum_sha256: activeVersion.checksum_sha256,
+        items: cards
+      },
+      meta: buildPaginationMeta(total, pagination.page, pagination.limit, cards.length)
     };
   }
 
   if (table === "relics") {
-    const relics = await prisma.relic.findMany({
-      where: { content_version_id: activeVersion.id },
-      orderBy: { id: "asc" }
-    });
+    const [relics, total] = await Promise.all([
+      prisma.relic.findMany({
+        where: { content_version_id: activeVersion.id },
+        orderBy: { id: "asc" },
+        take: pagination.limit,
+        skip: pagination.offset
+      }),
+      prisma.relic.count({ where: { content_version_id: activeVersion.id } })
+    ]);
 
     return {
-      table,
-      content_version: activeVersion.version,
-      checksum_sha256: activeVersion.checksum_sha256,
-      items: relics.filter((relic) => isRelicUnlocked(relic.tier, player.relics_tier))
+      data: {
+        table,
+        content_version: activeVersion.version,
+        checksum_sha256: activeVersion.checksum_sha256,
+        items: relics
+      },
+      meta: buildPaginationMeta(total, pagination.page, pagination.limit, relics.length)
     };
   }
 
-  const events = await findEventsByContentVersion(activeVersion.id);
+  const [events, total] = await Promise.all([
+    findEventsByContentVersion(activeVersion.id),
+    prisma.event.count({ where: { content_version_id: activeVersion.id } })
+  ]);
+
+  const pagedEvents = events.slice(pagination.offset, pagination.offset + pagination.limit);
 
   return {
-    table,
-    content_version: activeVersion.version,
-    checksum_sha256: activeVersion.checksum_sha256,
-    items: events.map((event) => normalizeEventForResponse(event as unknown as Record<string, unknown>))
+    data: {
+      table,
+      content_version: activeVersion.version,
+      checksum_sha256: activeVersion.checksum_sha256,
+      items: pagedEvents.map((event) =>
+        normalizeEventForResponse(event as unknown as Record<string, unknown>)
+      )
+    },
+    meta: buildPaginationMeta(total, pagination.page, pagination.limit, pagedEvents.length)
   };
 }
