@@ -26,6 +26,17 @@ function getString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getStringFromAliases(data: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = getString(data[key]);
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
 function requireField(value: string, field: string) {
   if (!value) {
     throw new HttpError(400, "validation_failed", "Payload inválido", [{ field, message: "required" }]);
@@ -40,9 +51,9 @@ export function validateRegisterPayload(payload: unknown): RegisterInput {
   const data = payload as Record<string, unknown>;
   const email = getString(data.email).toLowerCase();
   const password = getString(data.password);
-  const nickname = getString(data.nickname);
+  const nickname = getStringFromAliases(data, ["nickname", "nick_name", "username", "user_name"]);
   const platform = getString(data.platform);
-  const deviceId = getString(data.device_id);
+  const deviceId = getStringFromAliases(data, ["device_id", "deviceId"]);
 
   requireField(email, "email");
   requireField(password, "password");
@@ -88,7 +99,7 @@ export function validateLoginPayload(payload: unknown): LoginInput {
   const email = getString(data.email).toLowerCase();
   const password = getString(data.password);
   const platform = getString(data.platform);
-  const deviceId = getString(data.device_id);
+  const deviceId = getStringFromAliases(data, ["device_id", "deviceId"]);
 
   requireField(email, "email");
   requireField(password, "password");
