@@ -201,7 +201,7 @@ Resolver bootstrap de gameplay desde backend canónico.
 ## Endpoints
 
 - `GET /content/bundle`
-- `GET /content/:table` (`cards|relics|events`)
+- `GET /content/:table` (`hex_database|invocation_database|relics|events`)
 
 ## Reglas
 

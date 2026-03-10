@@ -1,9 +1,9 @@
 import { HttpError } from "../../lib/http-error";
 import { prisma } from "../../lib/prisma";
 import { AuthContext } from "../../lib/auth-context";
-import { isCardUnlocked, isRelicUnlocked } from "../player/progression";
+import { isInvocationUnlocked, isRelicUnlocked } from "../player/progression";
 
-type ContentTable = "cards" | "relics" | "events";
+type ContentTable = "hex_database" | "invocation_database" | "relics" | "events";
 
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGE_SIZE = 1000;
@@ -228,8 +228,12 @@ export async function getBundle(auth: AuthContext) {
   const player = await ensureAuthorized(auth);
   const activeVersion = await getActiveVersion();
 
-  const [cards, relics, events] = await Promise.all([
-    prisma.card.findMany({
+  const [hexCards, invocationCards, relics, events] = await Promise.all([
+    prisma.hexCard.findMany({
+      where: { content_version_id: activeVersion.id },
+      orderBy: { id: "asc" }
+    }),
+    prisma.invocationCard.findMany({
       where: { content_version_id: activeVersion.id },
       orderBy: { id: "asc" }
     }),
@@ -240,24 +244,36 @@ export async function getBundle(auth: AuthContext) {
     findEventsByContentVersion(activeVersion.id)
   ]);
 
-  const filteredCards = cards.filter((card) => isCardUnlocked(card.tier, player.cards_tier));
+  const filteredInvocationCards = invocationCards.filter((card) =>
+    isInvocationUnlocked(card.tier, player.cards_tier)
+  );
   const filteredRelics = relics.filter((relic) => isRelicUnlocked(relic.tier, player.relics_tier));
 
   return {
     content_version: activeVersion.version,
     checksum_sha256: activeVersion.checksum_sha256,
-    cards: filteredCards,
+    hex_database: hexCards,
+    invocation_database: filteredInvocationCards,
     relics: filteredRelics,
     events: events.map((event) => normalizeEventForResponse(event as unknown as Record<string, unknown>))
   };
 }
 
 function parseTable(value: string): ContentTable {
-  if (value === "cards" || value === "relics" || value === "events") {
+  if (
+    value === "hex_database" ||
+    value === "invocation_database" ||
+    value === "relics" ||
+    value === "events"
+  ) {
     return value;
   }
 
-  throw new HttpError(400, "unknown_content_table", "Unknown content table");
+  throw new HttpError(
+    400,
+    "unknown_content_table",
+    "Unknown content table. Use hex_database, invocation_database, relics or events"
+  );
 }
 
 function parsePagination(rawLimit: unknown, rawPage: unknown) {
@@ -306,15 +322,15 @@ export async function getContentTable(
   const activeVersion = await getActiveVersion();
   const pagination = parsePagination(rawLimit, rawPage);
 
-  if (table === "cards") {
-    const [cards, total] = await Promise.all([
-      prisma.card.findMany({
+  if (table === "hex_database") {
+    const [hexCards, total] = await Promise.all([
+      prisma.hexCard.findMany({
         where: { content_version_id: activeVersion.id },
         orderBy: { id: "asc" },
         take: pagination.limit,
         skip: pagination.offset
       }),
-      prisma.card.count({ where: { content_version_id: activeVersion.id } })
+      prisma.hexCard.count({ where: { content_version_id: activeVersion.id } })
     ]);
 
     return {
@@ -322,9 +338,31 @@ export async function getContentTable(
         table,
         content_version: activeVersion.version,
         checksum_sha256: activeVersion.checksum_sha256,
-        items: cards
+        items: hexCards
       },
-      meta: buildPaginationMeta(total, pagination.page, pagination.limit, cards.length)
+      meta: buildPaginationMeta(total, pagination.page, pagination.limit, hexCards.length)
+    };
+  }
+
+  if (table === "invocation_database") {
+    const [invocationCards, total] = await Promise.all([
+      prisma.invocationCard.findMany({
+        where: { content_version_id: activeVersion.id },
+        orderBy: { id: "asc" },
+        take: pagination.limit,
+        skip: pagination.offset
+      }),
+      prisma.invocationCard.count({ where: { content_version_id: activeVersion.id } })
+    ]);
+
+    return {
+      data: {
+        table,
+        content_version: activeVersion.version,
+        checksum_sha256: activeVersion.checksum_sha256,
+        items: invocationCards
+      },
+      meta: buildPaginationMeta(total, pagination.page, pagination.limit, invocationCards.length)
     };
   }
 

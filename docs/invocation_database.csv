@@ -1,0 +1,201 @@
+id,rarity,tier,name_es,name_en,image,gold_coins,red_coins,life_cost,attack,speed,health,skill1,skill2,skill3,skill_value1,skill_value2,skill_value3,lore,content_version_id
+1,common,Invocacion Inicial,Soul Hunter,Soul Hunter,res://assets/sprites/card-images/soul-hunter.png,4,0,0,2,3,4,spikes,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+2,common,Invocacion Inicial,Shadow Duelist,Shadow Duelist,res://assets/sprites/card-images/shadow-duelist.png,3,0,0,3,3,3,goldsmith,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+3,common,Invocacion Inicial,Abyss Prophet,Abyss Prophet,res://assets/sprites/card-images/abyss-prophet.png,5,0,0,3,6,5,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+4,common,Invocacion Inicial,Flesh Priest,Flesh Priest,res://assets/sprites/card-images/flesh-priest.png,6,0,0,3,7,7,lifelink,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+5,common,Invocacion Inicial,Roar of the Forge,Roar of the Forge,res://assets/sprites/card-images/roar-of-the-forge.png,4,0,0,4,4,2,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+6,common,Invocacion Inicial,Hunter of the Black Flames,Hunter of the Black Flames,res://assets/sprites/card-images/hunter-of-the-black-flames.png,3,0,0,0,3,5,poison,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+7,common,Invocacion Inicial,Herald of the Crimson Pact,Herald of the Crimson Pact,res://assets/sprites/card-images/herald-of-the-crimson-pact.png,7,0,0,2,5,6,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+8,common,Invocacion Inicial,Fangs of the Broken Moon,Fangs of the Broken Moon,res://assets/sprites/card-images/fangs-of-the-broken-moon.png,4,0,0,2,4,5,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+9,common,Invocacion Inicial,Mist Stalker,Mist Stalker,res://assets/sprites/card-images/mist-stalker.png,5,0,0,2,5,6,regenerate,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+10,common,Invocacion Inicial,Beast of the Purge,Beast of the Purge,res://assets/sprites/card-images/beast-of-the-purge.png,6,0,0,4,3,7,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+11,common,1,Fanghorn Basilisk,Fanghorn Basilisk,res://assets/sprites/card-images/fanghorn-basilisk.png,2,0,0,1,2,3,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+12,common,1,Soulreaper Demon,Soulreaper Demon,res://assets/sprites/card-images/soulreaper-demon.png,3,0,0,2,4,2,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+13,common,1,Frostfang Hydra,Frostfang Hydra,res://assets/sprites/card-images/frostfang-hydra.png,4,0,0,5,2,2,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+14,common,1,Voidborn Abomination,Voidborn Abomination,res://assets/sprites/card-images/voidborn-abomination.png,5,0,0,2,3,4,spikes,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+15,common,1,Abyssal Thornlord,Abyssal Thornlord,res://assets/sprites/card-images/abyssal-thornlord.png,6,0,0,1,4,5,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+16,common,1,Gravemind Devourer,Gravemind Devourer,res://assets/sprites/card-images/gravemind-devourer.png,3,0,0,1,5,3,lifelink,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+17,common,1,Obsidian Harbinger,Obsidian Harbinger,res://assets/sprites/card-images/obsidian-harbinger.png,4,0,0,1,6,3,doubleshot,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+18,common,1,Eclipse Revenant,Eclipse Revenant,res://assets/sprites/card-images/eclipse-revenant.png,7,0,0,4,7,2,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+19,common,2,Verdant Wurm,Verdant Wurm,res://assets/sprites/card-images/verdant-wurm.png,3,0,0,2,4,3,lifelink,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+20,common,2,Shadowlurker,Shadowlurker,res://assets/sprites/card-images/shadowlurker.png,4,0,0,3,3,4,goldsmith,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+21,common,2,Nether Serpent,Nether Serpent,res://assets/sprites/card-images/nether-serpent.png,5,0,0,2,3,7,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+22,common,2,Ashen Drake,Ashen Drake,res://assets/sprites/card-images/ashen-drake.png,7,0,0,4,7,3,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+23,common,2,Riftborn Colossus,Riftborn Colossus,res://assets/sprites/card-images/riftborn-colossus.png,6,0,0,4,5,4,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+24,common,2,Hollow Seraph,Hollow Seraph,res://assets/sprites/card-images/hollow-seraph.png,4,0,0,0,8,3,poison,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+25,common,2,Blightscale Tyrant,Blightscale Tyrant,res://assets/sprites/card-images/blightscale-tyrant.png,5,0,0,1,5,5,regenerate,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+26,common,2,Dreadroot Leviathan,Dreadroot Leviathan,res://assets/sprites/card-images/dreadroot-leviathan.png,2,0,0,1,1,2,spikes,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+27,common,3,Dark Phantom,Dark Phantom,res://assets/sprites/card-images/dark-phantom.png,4,0,0,4,4,3,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+28,common,3,Ironhide Golem,Ironhide Golem,res://assets/sprites/card-images/ironhide-golem.png,4,0,0,3,2,5,spikes,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+29,common,3,Stormbound Elemental,Stormbound Elemental,res://assets/sprites/card-images/stormbound-elemental.png,5,0,0,5,3,4,lifelink,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+30,common,3,Mirecrawler Beast,Mirecrawler Beast,res://assets/sprites/card-images/mirecrawler-beast.png,2,0,0,2,3,2,goldsmith,,,1,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+31,common,3,Voidcarver Apostle,Voidcarver Apostle,res://assets/sprites/card-images/voidcarver-apostle.png,5,0,0,1,7,4,poison,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+32,common,3,Nightshard Behemoth,Nightshard Behemoth,res://assets/sprites/card-images/nightshard-behemoth.png,6,0,0,4,4,6,regenerate,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+33,common,3,Ashen Covenant,Ashen Covenant,res://assets/sprites/card-images/ashen-covenant.png,4,0,0,1,4,4,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+34,common,3,Lurking Cataclysm,Lurking Cataclysm,res://assets/sprites/card-images/lurking-cataclysm.png,7,0,0,0,2,8,poison,,,4,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+35,rare,4,Sunforged Construct,Sunforged Construct,res://assets/sprites/card-images/sunforged-construct.png,5,0,0,3,4,8,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+36,rare,4,Angel of Despair,Angel of Despair,res://assets/sprites/card-images/angel-of-despair.png,3,0,0,4,5,2,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+37,rare,4,Veilwalker,Veilwalker,res://assets/sprites/card-images/veilwalker.png,4,0,0,5,3,4,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+38,rare,4,Guardian of Lost Rites,Guardian of Lost Rites,res://assets/sprites/card-images/guardian-of-lost-rites.png,3,0,0,3,2,3,spikes,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+39,rare,4,Soulchain Warden,Soulchain Warden,res://assets/sprites/card-images/soulchain-warden.png,8,0,0,3,7,8,regenerate,,,5,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+40,rare,4,Starved Archfiend,Starved Archfiend,res://assets/sprites/card-images/starved-archfiend.png,6,0,0,3,5,6,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+41,rare,4,Gloomspire Sentinel,Gloomspire Sentinel,res://assets/sprites/card-images/gloomspire-sentinel.png,3,0,0,0,5,3,poison,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+42,rare,4,Duskweaver Horror,Duskweaver Horror,res://assets/sprites/card-images/duskweaver-horror.png,5,0,0,5,5,5,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+43,rare,5,Keeper of the Hollow,Keeper of the Hollow,res://assets/sprites/card-images/keeper-of-the-hollow.png,6,0,0,6,7,2,lifelink,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+44,rare,5,Bloodsworn Revenant,Bloodsworn Revenant,res://assets/sprites/card-images/bloodsworn-revenant.png,3,0,0,2,4,4,goldsmith,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+45,rare,5,Metaltrasher,Metaltrasher,res://assets/sprites/card-images/metaltrasher.png,2,0,0,1,2,7,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+46,rare,5,Megladoth,Megladoth,res://assets/sprites/card-images/megladoth.png,3,0,0,2,6,3,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+47,rare,5,Thornveil Dominator,Thornveil Dominator,res://assets/sprites/card-images/thornveil-dominator.png,4,0,0,3,4,5,regenerate,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+48,rare,5,Cursed Skybreaker,Cursed Skybreaker,res://assets/sprites/card-images/cursed-skybreaker.png,6,0,0,4,3,9,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+49,rare,5,Netherbound Juggernaut,Netherbound Juggernaut,res://assets/sprites/card-images/netherbound-juggernaut.png,7,0,0,0,4,6,poison,,,6,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+50,rare,5,Whispering Monolith,Whispering Monolith,res://assets/sprites/card-images/whispering-monolith.png,8,0,0,5,8,8,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+51,epic,6,Shadow of Pain,Shadow of Pain,res://assets/sprites/card-images/shadow-of-pain.png,5,0,0,6,7,3,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+52,epic,6,Stoneforge Absolut,Stoneforge Absolut,res://assets/sprites/card-images/stoneforge-absolut.png,3,0,0,2,4,6,spikes,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+53,epic,6,Spiritmonger,Spiritmonger,res://assets/sprites/card-images/spiritmonger.png,5,0,0,4,5,7,lifelink,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+54,epic,6,Cinder Seer,Cinder Seer,res://assets/sprites/card-images/cinder-seer.png,4,0,0,4,8,3,goldsmith,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+55,epic,6,Blackflame Ascendant,Blackflame Ascendant,res://assets/sprites/card-images/blackflame-ascendant.png,3,0,0,0,5,5,poison,,,4,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+56,epic,6,Maw of the Endless,Maw of the Endless,res://assets/sprites/card-images/maw-of-the-endless.png,6,0,0,2,4,9,regenerate,,,4,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+57,epic,6,Sepulchral Titan,Sepulchral Titan,res://assets/sprites/card-images/sepulchral-titan.png,7,0,0,8,7,7,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+58,epic,6,Herald of the Fracture,Herald of the Fracture,res://assets/sprites/card-images/herald-of-the-fracture.png,8,0,0,7,8,9,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+101,common,Invocacion Inicial,Soul Hunter +1,Soul Hunter +1,res://assets/sprites/card-images/soul-hunter.png,4,0,0,3,4,5,spikes,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+102,common,Invocacion Inicial,Shadow Duelist +1,Shadow Duelist +1,res://assets/sprites/card-images/shadow-duelist.png,3,0,0,4,4,4,goldsmith,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+103,common,Invocacion Inicial,Abyss Prophet +1,Abyss Prophet +1,res://assets/sprites/card-images/abyss-prophet.png,5,0,0,4,7,6,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+104,common,Invocacion Inicial,Flesh Priest +1,Flesh Priest +1,res://assets/sprites/card-images/flesh-priest.png,6,0,0,4,8,8,lifelink,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+105,common,Invocacion Inicial,Roar of the Forge +1,Roar of the Forge +1,res://assets/sprites/card-images/roar-of-the-forge.png,4,0,0,6,5,3,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+106,common,Invocacion Inicial,Hunter of the Black Flames +1,Hunter of the Black Flames +1,res://assets/sprites/card-images/hunter-of-the-black-flames.png,3,0,0,0,5,5,poison,,,4,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+107,common,Invocacion Inicial,Herald of the Crimson Pact +1,Herald of the Crimson Pact +1,res://assets/sprites/card-images/herald-of-the-crimson-pact.png,7,0,0,2,7,7,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+108,common,Invocacion Inicial,Fangs of the Broken Moon +1,Fangs of the Broken Moon +1,res://assets/sprites/card-images/fangs-of-the-broken-moon.png,4,0,0,3,5,7,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+109,common,Invocacion Inicial,Mist Stalker +1,Mist Stalker +1,res://assets/sprites/card-images/mist-stalker.png,5,0,0,3,4,8,regenerate,,,5,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+110,common,Invocacion Inicial,Beast of the Purge +1,Beast of the Purge +1,res://assets/sprites/card-images/beast-of-the-purge.png,6,0,0,5,4,9,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+111,common,1,Fanghorn Basilisk +1,Fanghorn Basilisk +1,res://assets/sprites/card-images/fanghorn-basilisk.png,2,0,0,2,3,4,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+112,common,1,Soulreaper Demon +1,Soulreaper Demon +1,res://assets/sprites/card-images/soulreaper-demon.png,3,0,0,3,5,3,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+113,common,1,Frostfang Hydra +1,Frostfang Hydra +1,res://assets/sprites/card-images/frostfang-hydra.png,4,0,0,6,3,3,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+114,common,1,Voidborn Abomination +1,Voidborn Abomination +1,res://assets/sprites/card-images/voidborn-abomination.png,5,0,0,2,3,6,spikes,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+115,common,1,Abyssal Thornlord +1,Abyssal Thornlord +1,res://assets/sprites/card-images/abyssal-thornlord.png,6,0,0,2,5,6,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+116,common,1,Gravemind Devourer +1,Gravemind Devourer +1,res://assets/sprites/card-images/gravemind-devourer.png,3,0,0,2,5,4,lifelink,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+117,common,1,Obsidian Harbinger +1,Obsidian Harbinger +1,res://assets/sprites/card-images/obsidian-harbinger.png,4,0,0,2,6,4,doubleshot,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+118,common,1,Eclipse Revenant +1,Eclipse Revenant +1,res://assets/sprites/card-images/eclipse-revenant.png,7,0,0,4,7,7,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+119,common,2,Verdant Wurm +1,Verdant Wurm +1,res://assets/sprites/card-images/verdant-wurm.png,3,0,0,3,5,4,lifelink,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+120,common,2,Shadowlurker +1,Shadowlurker +1,res://assets/sprites/card-images/shadowlurker.png,4,0,0,3,4,4,goldsmith,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+121,common,2,Nether Serpent +1,Nether Serpent +1,res://assets/sprites/card-images/nether-serpent.png,5,0,0,4,4,7,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+122,common,2,Ashen Drake +1,Ashen Drake +1,res://assets/sprites/card-images/ashen-drake.png,7,0,0,5,8,4,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+123,common,2,Riftborn Colossus +1,Riftborn Colossus +1,res://assets/sprites/card-images/riftborn-colossus.png,6,0,0,5,6,5,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+124,common,2,Hollow Seraph +1,Hollow Seraph +1,res://assets/sprites/card-images/hollow-seraph.png,4,0,0,0,8,6,poison,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+125,common,2,Blightscale Tyrant +1,Blightscale Tyrant +1,res://assets/sprites/card-images/blightscale-tyrant.png,5,0,0,2,5,7,regenerate,,,4,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+126,common,2,Dreadroot Leviathan +1,Dreadroot Leviathan +1,res://assets/sprites/card-images/dreadroot-leviathan.png,2,0,0,2,1,2,spikes,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+127,common,3,Dark Phantom +1,Dark Phantom +1,res://assets/sprites/card-images/dark-phantom.png,4,0,0,5,5,4,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+128,common,3,Ironhide Golem +1,Ironhide Golem +1,res://assets/sprites/card-images/ironhide-golem.png,4,0,0,3,3,5,spikes,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+129,common,3,Stormbound Elemental +1,Stormbound Elemental +1,res://assets/sprites/card-images/stormbound-elemental.png,5,0,0,6,4,5,lifelink,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+130,common,3,Mirecrawler Beast +1,Mirecrawler Beast +1,res://assets/sprites/card-images/mirecrawler-beast.png,2,0,0,3,4,3,goldsmith,,,2,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+131,common,3,Voidcarver Apostle +1,Voidcarver Apostle +1,res://assets/sprites/card-images/voidcarver-apostle.png,5,0,0,1,7,6,poison,,,5,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+132,common,3,Nightshard Behemoth +1,Nightshard Behemoth +1,res://assets/sprites/card-images/nightshard-behemoth.png,6,0,0,5,5,7,regenerate,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+133,common,3,Ashen Covenant +1,Ashen Covenant +1,res://assets/sprites/card-images/ashen-covenant.png,4,0,0,1,6,6,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+134,common,3,Lurking Cataclysm +1,Lurking Cataclysm +1,res://assets/sprites/card-images/lurking-cataclysm.png,7,0,0,0,5,8,poison,,,5,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+135,rare,4,Sunforged Construct +1,Sunforged Construct +1,res://assets/sprites/card-images/sunforged-construct.png,5,0,0,4,5,9,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+136,rare,4,Angel of Despair +1,Angel of Despair +1,res://assets/sprites/card-images/angel-of-despair.png,3,0,0,5,6,3,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+137,rare,4,Veilwalker +1,Veilwalker +1,res://assets/sprites/card-images/veilwalker.png,4,0,0,6,4,5,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+138,rare,4,Guardian of Lost Rites +1,Guardian of Lost Rites +1,res://assets/sprites/card-images/guardian-of-lost-rites.png,3,0,0,4,3,4,spikes,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+139,rare,4,Soulchain Warden +1,Soulchain Warden +1,res://assets/sprites/card-images/soulchain-warden.png,8,0,0,4,8,9,regenerate,,,6,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+140,rare,4,Starved Archfiend +1,Starved Archfiend +1,res://assets/sprites/card-images/starved-archfiend.png,6,0,0,3,5,6,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+141,rare,4,Gloomspire Sentinel +1,Gloomspire Sentinel +1,res://assets/sprites/card-images/gloomspire-sentinel.png,3,0,0,0,6,4,poison,,,6,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+142,rare,4,Duskweaver Horror +1,Duskweaver Horror +1,res://assets/sprites/card-images/duskweaver-horror.png,5,0,0,6,6,6,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+143,rare,5,Keeper of the Hollow +1,Keeper of the Hollow +1,res://assets/sprites/card-images/keeper-of-the-hollow.png,6,0,0,7,8,3,lifelink,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+144,rare,5,Bloodsworn Revenant +1,Bloodsworn Revenant +1,res://assets/sprites/card-images/bloodsworn-revenant.png,3,0,0,3,5,5,goldsmith,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+145,rare,5,Metaltrasher +1,Metaltrasher +1,res://assets/sprites/card-images/metaltrasher.png,2,0,0,2,3,8,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+146,rare,5,Megladoth +1,Megladoth +1,res://assets/sprites/card-images/megladoth.png,3,0,0,3,7,4,flying,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+147,rare,5,Thornveil Dominator +1,Thornveil Dominator +1,res://assets/sprites/card-images/thornveil-dominator.png,4,0,0,4,5,6,regenerate,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+148,rare,5,Cursed Skybreaker +1,Cursed Skybreaker +1,res://assets/sprites/card-images/cursed-skybreaker.png,6,0,0,4,3,9,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+149,rare,5,Netherbound Juggernaut +1,Netherbound Juggernaut +1,res://assets/sprites/card-images/netherbound-juggernaut.png,7,0,0,0,6,7,poison,,,7,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+150,rare,5,Whispering Monolith +1,Whispering Monolith +1,res://assets/sprites/card-images/whispering-monolith.png,8,0,0,6,8,9,deathtouch,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+151,epic,6,Shadow of Pain +1,Shadow of Pain +1,res://assets/sprites/card-images/shadow-of-pain.png,5,0,0,7,8,4,trample,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+152,epic,6,Stoneforge Absolut +1,Stoneforge Absolut +1,res://assets/sprites/card-images/stoneforge-absolut.png,3,0,0,3,5,6,spikes,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+153,epic,6,Spiritmonger +1,Spiritmonger +1,res://assets/sprites/card-images/spiritmonger.png,5,0,0,5,6,7,lifelink,,,4,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+154,epic,6,Cinder Seer +1,Cinder Seer +1,res://assets/sprites/card-images/cinder-seer.png,4,0,0,5,9,4,goldsmith,,,3,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+155,epic,6,Blackflame Ascendant +1,Blackflame Ascendant +1,res://assets/sprites/card-images/blackflame-ascendant.png,3,0,0,0,6,6,poison,,,5,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+156,epic,6,Maw of the Endless +1,Maw of the Endless +1,res://assets/sprites/card-images/maw-of-the-endless.png,6,0,0,3,5,9,regenerate,,,6,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+157,epic,6,Sepulchral Titan +1,Sepulchral Titan +1,res://assets/sprites/card-images/sepulchral-titan.png,7,0,0,8,8,7,reach,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+158,epic,6,Herald of the Fracture +1,Herald of the Fracture +1,res://assets/sprites/card-images/herald-of-the-fracture.png,8,0,0,8,9,9,guard,,,,,,,cb686dec-6fe2-46c7-b8c2-4a3eaaac67d8
+159,,,,,,,,,,,,,,,,,,,
+160,,,,,,,,,,,,,,,,,,,
+161,,,,,,,,,,,,,,,,,,,
+162,,,,,,,,,,,,,,,,,,,
+163,,,,,,,,,,,,,,,,,,,
+164,,,,,,,,,,,,,,,,,,,
+165,,,,,,,,,,,,,,,,,,,
+166,,,,,,,,,,,,,,,,,,,
+167,,,,,,,,,,,,,,,,,,,
+168,,,,,,,,,,,,,,,,,,,
+169,,,,,,,,,,,,,,,,,,,
+170,,,,,,,,,,,,,,,,,,,
+171,,,,,,,,,,,,,,,,,,,
+172,,,,,,,,,,,,,,,,,,,
+173,,,,,,,,,,,,,,,,,,,
+174,,,,,,,,,,,,,,,,,,,
+175,,,,,,,,,,,,,,,,,,,
+176,,,,,,,,,,,,,,,,,,,
+177,,,,,,,,,,,,,,,,,,,
+178,,,,,,,,,,,,,,,,,,,
+179,,,,,,,,,,,,,,,,,,,
+180,,,,,,,,,,,,,,,,,,,
+181,,,,,,,,,,,,,,,,,,,
+182,,,,,,,,,,,,,,,,,,,
+183,,,,,,,,,,,,,,,,,,,
+184,,,,,,,,,,,,,,,,,,,
+185,,,,,,,,,,,,,,,,,,,
+186,,,,,,,,,,,,,,,,,,,
+187,,,,,,,,,,,,,,,,,,,
+188,,,,,,,,,,,,,,,,,,,
+189,,,,,,,,,,,,,,,,,,,
+190,,,,,,,,,,,,,,,,,,,
+191,,,,,,,,,,,,,,,,,,,
+192,,,,,,,,,,,,,,,,,,,
+193,,,,,,,,,,,,,,,,,,,
+194,,,,,,,,,,,,,,,,,,,
+195,,,,,,,,,,,,,,,,,,,
+196,,,,,,,,,,,,,,,,,,,
+197,,,,,,,,,,,,,,,,,,,
+198,,,,,,,,,,,,,,,,,,,
+199,,,,,,,,,,,,,,,,,,,
+200,,,,,,,,,,,,,,,,,,,

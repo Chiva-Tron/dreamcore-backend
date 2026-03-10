@@ -11,7 +11,7 @@ export type PlayerProgressionState = {
   classes_tier: number;
 };
 
-const CARDS_TIER_THRESHOLDS = [0, 40, 100, 180];
+const INVOCATIONS_TIER_THRESHOLDS = [0, 40, 100, 180];
 const RELICS_TIER_THRESHOLDS = [0, 30, 80, 150];
 const CLASSES_TIER_THRESHOLDS = [0, 60, 140, 240];
 
@@ -43,7 +43,7 @@ function sanitizeTier(value: number | undefined): number {
   return Math.max(1, Math.trunc(numeric));
 }
 
-function parseCardTierValue(rawTier: string): number {
+function parseInvocationTierValue(rawTier: string): number {
   const normalized = rawTier.trim().toLowerCase();
   if (!normalized || normalized === "none") {
     return 1;
@@ -103,7 +103,7 @@ export function calculateNetherPointsGain(score: number, currentFloor: number): 
 
 export function deriveTiersFromNetherPoints(netherPoints: number): ProgressionTiers {
   return {
-    cardsTier: resolveTierFromThresholds(netherPoints, CARDS_TIER_THRESHOLDS),
+    cardsTier: resolveTierFromThresholds(netherPoints, INVOCATIONS_TIER_THRESHOLDS),
     relicsTier: resolveTierFromThresholds(netherPoints, RELICS_TIER_THRESHOLDS),
     classesTier: resolveTierFromThresholds(netherPoints, CLASSES_TIER_THRESHOLDS)
   };
@@ -123,10 +123,12 @@ export function getUnlockedClasses(classesTier: number): string[] {
   return UNLOCKABLE_CLASSES_BY_TIER[safeTier] ?? UNLOCKABLE_CLASSES_BY_TIER[1];
 }
 
-export function isCardUnlocked(cardTier: string, playerCardsTier: number): boolean {
-  const requiredTier = parseCardTierValue(cardTier);
+export function isInvocationUnlocked(invocationTier: string, playerCardsTier: number): boolean {
+  const requiredTier = parseInvocationTierValue(invocationTier);
   return requiredTier <= sanitizeTier(playerCardsTier);
 }
+
+export const isCardUnlocked = isInvocationUnlocked;
 
 export function isRelicUnlocked(relicTier: string, playerRelicsTier: number): boolean {
   const requiredTier = parseRelicTierValue(relicTier);

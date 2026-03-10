@@ -568,7 +568,8 @@ Response 200:
   "data": {
     "content_version": "2026.02.22",
     "checksum_sha256": "hex",
-    "cards": [],
+    "hex_database": [],
+    "invocation_database": [],
     "relics": [],
     "events": []
   },
@@ -579,7 +580,7 @@ Response 200:
 }
 ```
 
-## 5.4.2 `GET /content/:table` (`cards|relics|events`)
+## 5.4.2 `GET /content/:table` (`hex_database|invocation_database|relics|events`)
 
 Parámetros de query opcionales:
 
@@ -588,8 +589,8 @@ Parámetros de query opcionales:
 
 Reglas de visibilidad:
 
-- `cards`, `relics` y `events` se devuelven completos para la `content_version` activa.
-- El filtrado por progresión aplica al endpoint `GET /content/bundle`.
+- `hex_database`, `invocation_database`, `relics` y `events` se devuelven completos para la `content_version` activa.
+- El filtrado por progresión aplica al endpoint `GET /content/bundle` y afecta a `invocation_database` y `relics`.
 
 Response 200:
 
@@ -597,7 +598,7 @@ Response 200:
 {
   "ok": true,
   "data": {
-    "table": "cards",
+    "table": "hex_database",
     "content_version": "2026.02.22",
     "checksum_sha256": "hex",
     "items": []
@@ -1503,7 +1504,7 @@ Implementado en runtime (23-02-2026):
   - acumula `nether_points`;
   - recalcula tiers y los persiste en `players` dentro de la misma transacción del cierre de run.
 - `GET /player/me/state` devuelve los campos de progresión y `unlocked_classes`.
-- `GET /content/bundle` aplica filtrado por tier del jugador autenticado para `cards` y `relics`.
+- `GET /content/bundle` aplica filtrado por tier del jugador autenticado para `invocation_database` y `relics`.
 - `GET /content/:table` devuelve contenido completo de la versión activa con paginación (`limit/page`).
 
 Reglas actuales (v1 implementada):

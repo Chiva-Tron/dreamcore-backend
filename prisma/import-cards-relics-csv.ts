@@ -6,47 +6,59 @@ import { PrismaClient } from "@prisma/client";
 import { parse } from "csv-parse/sync";
 import { Pool } from "pg";
 
-type CardCsvRow = {
+type HexCsvRow = {
   id?: string;
   card_class?: string;
+  rarity?: string;
+  name_es?: string;
+  name_en?: string;
+  image?: string;
+  gold_coins?: string;
+  red_coins?: string;
+  life_cost?: string;
+  displayed_text_es?: string;
+  displayed_text_en?: string;
+  target?: string;
+  effect1?: string;
+  effect2?: string;
+  effect3?: string;
+  condition1?: string;
+  condition2?: string;
+  condition3?: string;
+  value1?: string;
+  value2?: string;
+  value3?: string;
+  turn_duration1?: string;
+  turn_duration2?: string;
+  turn_duration3?: string;
+  chance1?: string;
+  chance2?: string;
+  chance3?: string;
+  ethereal?: string;
+  content_version_id?: string;
+};
+
+type InvocationCsvRow = {
+  id?: string;
   rarity?: string;
   tier?: string;
   name_es?: string;
   name_en?: string;
   image?: string;
   gold_coins?: string;
+  red_coins?: string;
+  life_cost?: string;
   attack?: string;
   speed?: string;
   health?: string;
   skill1?: string;
+  skill2?: string;
+  skill3?: string;
   skill_value1?: string;
   skill_value2?: string;
   skill_value3?: string;
-  ethereal?: string;
-  displayed_text?: string;
-  condition?: string;
-  target?: string;
-  effect1?: string;
-  value1?: string;
-  turn_duration1?: string;
-  chance1?: string;
-  priority1?: string;
-  effect2?: string;
-  value2?: string;
-  turn_duration2?: string;
-  chance2?: string;
-  priority2?: string;
-  effect3?: string;
-  value3?: string;
-  turn_duration3?: string;
-  chance3?: string;
-  priority3?: string;
-  type?: string;
-  additional_cost?: string;
-  skill2?: string;
-  skill3?: string;
-  red_coins?: string;
-  life_cost?: string;
+  lore?: string;
+  content_version_id?: string;
 };
 
 type RelicCsvRow = {
@@ -108,25 +120,27 @@ function toBoolean(value: string | undefined): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
-function inferCardType(row: CardCsvRow): string {
-  const explicitType = toText(row.type);
-  if (explicitType) {
-    return explicitType;
-  }
+function isSkippableHexRow(row: HexCsvRow): boolean {
+  const id = toInt(row.id, -1);
+  const hasMeaningfulContent =
+    !!toText(row.card_class) ||
+    !!toText(row.name_es) ||
+    !!toText(row.name_en) ||
+    !!toText(row.displayed_text_es) ||
+    !!toText(row.effect1);
 
-  const hasCombatStats =
-    toNullableInt(row.attack) !== null ||
-    toNullableInt(row.speed) !== null ||
-    toNullableInt(row.health) !== null;
-
-  return hasCombatStats ? "invocation" : "hex";
+  return id <= 0 || !hasMeaningfulContent;
 }
 
-function isSkippableCardRow(row: CardCsvRow): boolean {
+function isSkippableInvocationRow(row: InvocationCsvRow): boolean {
   const id = toInt(row.id, -1);
-  const cardClass = toText(row.card_class);
   const hasMeaningfulContent =
-    !!cardClass || !!toText(row.name_es) || !!toText(row.name_en) || !!toText(row.displayed_text);
+    !!toText(row.name_es) ||
+    !!toText(row.name_en) ||
+    toNullableInt(row.attack) !== null ||
+    toNullableInt(row.speed) !== null ||
+    toNullableInt(row.health) !== null ||
+    !!toText(row.skill1);
 
   return id <= 0 || !hasMeaningfulContent;
 }
@@ -150,12 +164,12 @@ async function resolveContentVersionId(prisma: PrismaClient): Promise<string> {
     return active.id;
   }
 
-  const fallbackVersion = "2026.02.23-cards-relics-import";
+  const fallbackVersion = "2026.03.10-content-import";
   const created = await prisma.contentVersion.upsert({
     where: { version: fallbackVersion },
     create: {
       version: fallbackVersion,
-      checksum_sha256: "cards-relics-import-placeholder-checksum",
+      checksum_sha256: "content-import-placeholder-checksum",
       is_active: true
     },
     update: {
@@ -168,11 +182,14 @@ async function resolveContentVersionId(prisma: PrismaClient): Promise<string> {
 }
 
 async function main() {
-  const cardsCsvPath = process.argv[2];
-  const relicsCsvPath = process.argv[3];
+  const hexCsvPath = process.argv[2];
+  const invocationCsvPath = process.argv[3];
+  const relicsCsvPath = process.argv[4];
 
-  if (!cardsCsvPath || !relicsCsvPath) {
-    throw new Error("Usage: tsx prisma/import-cards-relics-csv.ts <path-to-cards.csv> <path-to-relics.csv>");
+  if (!hexCsvPath || !invocationCsvPath) {
+    throw new Error(
+      "Usage: npx tsx prisma/import-cards-relics-csv.ts <path-to-hex.csv> <path-to-invocation.csv> [path-to-relics.csv]"
+    );
   }
 
   const databaseUrl = process.env.DATABASE_URL;
@@ -184,73 +201,74 @@ async function main() {
   const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
   try {
-    const [cardsCsvText, relicsCsvText] = await Promise.all([
-      readFile(resolve(cardsCsvPath), "utf8"),
-      readFile(resolve(relicsCsvPath), "utf8")
-    ]);
+    const filesToRead = [readFile(resolve(hexCsvPath), "utf8"), readFile(resolve(invocationCsvPath), "utf8")];
 
-    const cardsRows = parse(cardsCsvText, {
+    if (relicsCsvPath) {
+      filesToRead.push(readFile(resolve(relicsCsvPath), "utf8"));
+    }
+
+    const [hexCsvText, invocationCsvText, relicsCsvText] = await Promise.all(filesToRead);
+
+    const hexRows = parse(hexCsvText, {
       columns: true,
       skip_empty_lines: true,
       trim: true
-    }) as CardCsvRow[];
+    }) as HexCsvRow[];
 
-    const relicsRows = parse(relicsCsvText, {
+    const invocationRows = parse(invocationCsvText, {
       columns: true,
       skip_empty_lines: true,
       trim: true
-    }) as RelicCsvRow[];
+    }) as InvocationCsvRow[];
+
+    const relicsRows = relicsCsvText
+      ? (parse(relicsCsvText, {
+          columns: true,
+          skip_empty_lines: true,
+          trim: true
+        }) as RelicCsvRow[])
+      : [];
 
     const contentVersionId = await resolveContentVersionId(prisma);
 
-    let cardsUpserted = 0;
-    let cardsSkipped = 0;
+    let hexUpserted = 0;
+    let hexSkipped = 0;
+    let invocationUpserted = 0;
+    let invocationSkipped = 0;
     let relicsUpserted = 0;
     let relicsSkipped = 0;
 
-    for (const row of cardsRows) {
-      if (isSkippableCardRow(row)) {
-        cardsSkipped += 1;
+    for (const row of hexRows) {
+      if (isSkippableHexRow(row)) {
+        hexSkipped += 1;
         continue;
       }
 
       const id = toInt(row.id, -1);
-      const nameEn = toText(row.name_en) || `card_${id}`;
+      const nameEn = toText(row.name_en) || `hex_${id}`;
       const nameEs = toText(row.name_es) || nameEn;
-      const cardClass = toText(row.card_class) || "no_class";
-      const rarity = toText(row.rarity) || "common";
-      const tier = toText(row.tier) || "none";
-      const image = toText(row.image) || "res://assets/sprites/card-images/placeholder.png";
 
-      await prisma.card.upsert({
+      await prisma.hexCard.upsert({
         where: { id },
         create: {
           id,
-          card_class: cardClass,
-          rarity,
-          tier,
+          card_class: toText(row.card_class) || "no_class",
+          rarity: toText(row.rarity) || "common",
           name_es: nameEs,
           name_en: nameEn,
-          image,
+          image: toText(row.image) || "res://assets/sprites/card-images/placeholder.png",
           gold_coins: toInt(row.gold_coins, 0),
           red_coins: toInt(row.red_coins, 0),
           life_cost: toInt(row.life_cost, 0),
-          additional_cost: toInt(row.additional_cost, 0),
-          attack: toNullableInt(row.attack),
-          speed: toNullableInt(row.speed),
-          health: toNullableInt(row.health),
-          skill1: toNullableText(row.skill1),
-          skill2: toNullableText(row.skill2),
-          skill3: toNullableText(row.skill3),
-          skill_value1: toNullableInt(row.skill_value1),
-          skill_value2: toNullableInt(row.skill_value2),
-          skill_value3: toNullableInt(row.skill_value3),
-          displayed_text: toNullableText(row.displayed_text),
-          condition: toNullableText(row.condition),
+          displayed_text_es: toNullableText(row.displayed_text_es),
+          displayed_text_en: toNullableText(row.displayed_text_en),
           target: toNullableText(row.target),
           effect1: toNullableText(row.effect1),
           effect2: toNullableText(row.effect2),
           effect3: toNullableText(row.effect3),
+          condition1: toNullableText(row.condition1),
+          condition2: toNullableText(row.condition2),
+          condition3: toNullableText(row.condition3),
           value1: toNullableInt(row.value1),
           value2: toNullableInt(row.value2),
           value3: toNullableInt(row.value3),
@@ -260,39 +278,27 @@ async function main() {
           chance1: toNullableInt(row.chance1),
           chance2: toNullableInt(row.chance2),
           chance3: toNullableInt(row.chance3),
-          priority1: toNullableInt(row.priority1),
-          priority2: toNullableInt(row.priority2),
-          priority3: toNullableInt(row.priority3),
-          type: inferCardType(row),
           ethereal: toBoolean(row.ethereal),
-          content_version_id: contentVersionId
+          content_version_id: toText(row.content_version_id) || contentVersionId
         },
         update: {
-          card_class: cardClass,
-          rarity,
-          tier,
+          card_class: toText(row.card_class) || "no_class",
+          rarity: toText(row.rarity) || "common",
           name_es: nameEs,
           name_en: nameEn,
-          image,
+          image: toText(row.image) || "res://assets/sprites/card-images/placeholder.png",
           gold_coins: toInt(row.gold_coins, 0),
           red_coins: toInt(row.red_coins, 0),
           life_cost: toInt(row.life_cost, 0),
-          additional_cost: toInt(row.additional_cost, 0),
-          attack: toNullableInt(row.attack),
-          speed: toNullableInt(row.speed),
-          health: toNullableInt(row.health),
-          skill1: toNullableText(row.skill1),
-          skill2: toNullableText(row.skill2),
-          skill3: toNullableText(row.skill3),
-          skill_value1: toNullableInt(row.skill_value1),
-          skill_value2: toNullableInt(row.skill_value2),
-          skill_value3: toNullableInt(row.skill_value3),
-          displayed_text: toNullableText(row.displayed_text),
-          condition: toNullableText(row.condition),
+          displayed_text_es: toNullableText(row.displayed_text_es),
+          displayed_text_en: toNullableText(row.displayed_text_en),
           target: toNullableText(row.target),
           effect1: toNullableText(row.effect1),
           effect2: toNullableText(row.effect2),
           effect3: toNullableText(row.effect3),
+          condition1: toNullableText(row.condition1),
+          condition2: toNullableText(row.condition2),
+          condition3: toNullableText(row.condition3),
           value1: toNullableInt(row.value1),
           value2: toNullableInt(row.value2),
           value3: toNullableInt(row.value3),
@@ -302,16 +308,72 @@ async function main() {
           chance1: toNullableInt(row.chance1),
           chance2: toNullableInt(row.chance2),
           chance3: toNullableInt(row.chance3),
-          priority1: toNullableInt(row.priority1),
-          priority2: toNullableInt(row.priority2),
-          priority3: toNullableInt(row.priority3),
-          type: inferCardType(row),
           ethereal: toBoolean(row.ethereal),
-          content_version_id: contentVersionId
+          content_version_id: toText(row.content_version_id) || contentVersionId
         }
       });
 
-      cardsUpserted += 1;
+      hexUpserted += 1;
+    }
+
+    for (const row of invocationRows) {
+      if (isSkippableInvocationRow(row)) {
+        invocationSkipped += 1;
+        continue;
+      }
+
+      const id = toInt(row.id, -1);
+      const nameEn = toText(row.name_en) || `invocation_${id}`;
+      const nameEs = toText(row.name_es) || nameEn;
+
+      await prisma.invocationCard.upsert({
+        where: { id },
+        create: {
+          id,
+          rarity: toText(row.rarity) || "common",
+          tier: toText(row.tier) || "1",
+          name_es: nameEs,
+          name_en: nameEn,
+          image: toText(row.image) || "res://assets/sprites/card-images/placeholder.png",
+          gold_coins: toInt(row.gold_coins, 0),
+          red_coins: toInt(row.red_coins, 0),
+          life_cost: toInt(row.life_cost, 0),
+          attack: toNullableInt(row.attack),
+          speed: toNullableInt(row.speed),
+          health: toNullableInt(row.health),
+          skill1: toNullableText(row.skill1),
+          skill2: toNullableText(row.skill2),
+          skill3: toNullableText(row.skill3),
+          skill_value1: toNullableInt(row.skill_value1),
+          skill_value2: toNullableInt(row.skill_value2),
+          skill_value3: toNullableInt(row.skill_value3),
+          lore: toNullableText(row.lore),
+          content_version_id: toText(row.content_version_id) || contentVersionId
+        },
+        update: {
+          rarity: toText(row.rarity) || "common",
+          tier: toText(row.tier) || "1",
+          name_es: nameEs,
+          name_en: nameEn,
+          image: toText(row.image) || "res://assets/sprites/card-images/placeholder.png",
+          gold_coins: toInt(row.gold_coins, 0),
+          red_coins: toInt(row.red_coins, 0),
+          life_cost: toInt(row.life_cost, 0),
+          attack: toNullableInt(row.attack),
+          speed: toNullableInt(row.speed),
+          health: toNullableInt(row.health),
+          skill1: toNullableText(row.skill1),
+          skill2: toNullableText(row.skill2),
+          skill3: toNullableText(row.skill3),
+          skill_value1: toNullableInt(row.skill_value1),
+          skill_value2: toNullableInt(row.skill_value2),
+          skill_value3: toNullableInt(row.skill_value3),
+          lore: toNullableText(row.lore),
+          content_version_id: toText(row.content_version_id) || contentVersionId
+        }
+      });
+
+      invocationUpserted += 1;
     }
 
     for (const row of relicsRows) {
@@ -365,7 +427,7 @@ async function main() {
     }
 
     console.log(
-      `Cards and relics import completed. Cards upserted: ${cardsUpserted}, cards skipped: ${cardsSkipped}, relics upserted: ${relicsUpserted}, relics skipped: ${relicsSkipped}.`
+      `Content import completed. Hex upserted: ${hexUpserted}, hex skipped: ${hexSkipped}, invocation upserted: ${invocationUpserted}, invocation skipped: ${invocationSkipped}, relics upserted: ${relicsUpserted}, relics skipped: ${relicsSkipped}.`
     );
   } finally {
     await prisma.$disconnect();
@@ -374,6 +436,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Import cards/relics failed", error);
+  console.error("Import content failed", error);
   process.exitCode = 1;
 });

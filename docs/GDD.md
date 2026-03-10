@@ -147,18 +147,15 @@ Ofrecer una experiencia compacta y altamente rejugable, donde la tension nace de
 
 ### 11.1 Cartas
 
-Base de datos: [database/cards_database.txt](database/cards_database.txt).
+Base de datos:
+
+- Hexes: [hex_database.csv](hex_database.csv).
+- Invocaciones: [invocation_database.csv](invocation_database.csv).
 
 Campos principales:
 
-- Identidad: `id`, `cardClass`, `rarity`, `tier`, `nameES`, `nameEN`, `image`.
-- Costos: `goldCoins`, `redCoins`, `lifeCost`, `additionalCost`.
-- Stats de invocacion: `attack`, `speed`, `health`.
-- Skills: `skill1/2/3` y `skillValue1/2/3`.
-- Texto: `displayedText`, `condition`, `target`.
-- Efectos: `effect1/2/3`, `value1/2/3`, `turnDuration1/2/3`, `chance1/2/3`, `priority1/2/3`.
-- Tipo: `type` (invocation o hex).
-- Propiedad especial: `ethereal` (cartas que se exilian).
+- Hexes: `id`, `card_class`, `rarity`, `name_es`, `name_en`, `image`, `gold_coins`, `red_coins`, `life_cost`, `displayed_text_es`, `displayed_text_en`, `target`, `effect1/2/3`, `condition1/2/3`, `value1/2/3`, `turn_duration1/2/3`, `chance1/2/3`, `ethereal`.
+- Invocaciones: `id`, `rarity`, `tier`, `name_es`, `name_en`, `image`, `gold_coins`, `red_coins`, `life_cost`, `attack`, `speed`, `health`, `skill1/2/3`, `skill_value1/2/3`, `lore`.
 
 Ejemplos actuales de cartas:
 
@@ -266,7 +263,8 @@ Campos principales:
 
 ## 21. Referencias de data
 
-- Cartas: [database/cards_database.txt](database/cards_database.txt).
+- Hexes: [hex_database.csv](hex_database.csv).
+- Invocaciones: [invocation_database.csv](invocation_database.csv).
 - Eventos: [database/events_database.txt](database/events_database.txt).
 - Reliquias: [database/relics_database.txt](database/relics_database.txt).
 
