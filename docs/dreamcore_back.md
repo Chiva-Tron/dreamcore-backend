@@ -565,6 +565,7 @@ Notas de contrato:
 - Las llaves canónicas del bundle son `hex_database`, `invocation_database`, `relics_database` y `events_database`.
 - `relics` y `events` quedaron sólo como aliases de compatibilidad para `GET /content/:table`.
 - Los CSV runtime usan algunos headers en camelCase, pero la API backend responde contenido en `snake_case`.
+- Query opcional: `include_locked=true|1|yes|on` desactiva el filtrado por progresión y devuelve `invocation_database` y `relics_database` completos para la `content_version` activa.
 
 Response 200:
 
@@ -592,11 +593,12 @@ Parámetros de query opcionales:
 
 - `limit` (entero, `1..1000`, default `100`)
 - `page` (entero, mínimo `1`, default `1`)
+- `offset` (entero, mínimo `0`) como alias legacy de compatibilidad cuando el cliente pagina por desplazamiento absoluto. Si se envían `page` y `offset`, prevalece `page`.
 
 Reglas de visibilidad:
 
 - `hex_database`, `invocation_database`, `relics_database` y `events_database` se devuelven completos para la `content_version` activa.
-- El filtrado por progresión aplica al endpoint `GET /content/bundle` y afecta a `invocation_database` y `relics_database`.
+- El filtrado por progresión aplica al endpoint `GET /content/bundle` y afecta a `invocation_database` y `relics_database`, salvo que se envíe `include_locked=true`.
 - Compatibilidad temporal: `GET /content/relics` y `GET /content/events` siguen resolviendo, pero la respuesta usa `table: "relics_database"` o `table: "events_database"`.
 - En `events_database`, `reward_multiplier` se devuelve como número decimal.
 

@@ -48,6 +48,19 @@ type FallbackEventRow = {
   content_version_id: string;
 };
 
+function parseBooleanQuery(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+  }
+
+  return false;
+}
+
 function toNonNegativeInt(value: unknown, fallback = 0): number {
   if (typeof value === "number" && Number.isFinite(value)) {
     return Math.max(0, Math.trunc(value));
@@ -248,7 +261,7 @@ async function getActiveVersion() {
   return version;
 }
 
-export async function getBundle(auth: AuthContext) {
+export async function getBundle(auth: AuthContext, includeLocked = false) {
   const player = await ensureAuthorized(auth);
   const activeVersion = await getActiveVersion();
 
@@ -268,17 +281,19 @@ export async function getBundle(auth: AuthContext) {
     findEventsByContentVersion(activeVersion.id)
   ]);
 
-  const filteredInvocationCards = invocationCards.filter((card) =>
-    isInvocationUnlocked(card.tier, player.cards_tier)
-  );
-  const filteredRelics = relics.filter((relic) => isRelicUnlocked(relic.tier, player.relics_tier));
+  const visibleInvocationCards = includeLocked
+    ? invocationCards
+    : invocationCards.filter((card) => isInvocationUnlocked(card.tier, player.cards_tier));
+  const visibleRelics = includeLocked
+    ? relics
+    : relics.filter((relic) => isRelicUnlocked(relic.tier, player.relics_tier));
 
   return {
     content_version: activeVersion.version,
     checksum_sha256: activeVersion.checksum_sha256,
     hex_database: hexCards,
-    invocation_database: filteredInvocationCards,
-    relics_database: filteredRelics,
+    invocation_database: visibleInvocationCards,
+    relics_database: visibleRelics,
     events_database: events.map((event) => normalizeEventForResponse(event as unknown as Record<string, unknown>))
   };
 }
@@ -303,10 +318,17 @@ function parseTable(value: string): ContentTable {
   );
 }
 
-function parsePagination(rawLimit: unknown, rawPage: unknown) {
+function parsePagination(rawLimit: unknown, rawPage: unknown, rawOffset: unknown) {
   const limit =
     typeof rawLimit === "string" && rawLimit.trim() ? Number.parseInt(rawLimit, 10) : DEFAULT_PAGE_SIZE;
-  const page = typeof rawPage === "string" && rawPage.trim() ? Number.parseInt(rawPage, 10) : 1;
+  const hasPage = typeof rawPage === "string" && rawPage.trim().length > 0;
+  const hasOffset = typeof rawOffset === "string" && rawOffset.trim().length > 0;
+  const page = hasPage ? Number.parseInt(rawPage, 10) : 1;
+  const offset = hasPage
+    ? (page - 1) * limit
+    : hasOffset
+      ? Number.parseInt(rawOffset, 10)
+      : 0;
 
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_PAGE_SIZE) {
     throw new HttpError(400, "validation_failed", "Payload inválido", [
@@ -314,16 +336,24 @@ function parsePagination(rawLimit: unknown, rawPage: unknown) {
     ]);
   }
 
-  if (!Number.isInteger(page) || page < 1) {
+  if (hasPage && (!Number.isInteger(page) || page < 1)) {
     throw new HttpError(400, "validation_failed", "Payload inválido", [
       { field: "page", message: "min_1" }
     ]);
   }
 
+  if (!hasPage && (!Number.isInteger(offset) || offset < 0)) {
+    throw new HttpError(400, "validation_failed", "Payload inválido", [
+      { field: "offset", message: "min_0" }
+    ]);
+  }
+
+  const resolvedPage = hasPage ? page : Math.floor(offset / limit) + 1;
+
   return {
     limit,
-    page,
-    offset: (page - 1) * limit
+    page: resolvedPage,
+    offset
   };
 }
 
@@ -342,12 +372,13 @@ export async function getContentTable(
   auth: AuthContext,
   tableRaw: string,
   rawLimit: unknown,
-  rawPage: unknown
+  rawPage: unknown,
+  rawOffset: unknown
 ): Promise<ContentTableResult> {
   await ensureAuthorized(auth);
   const table = parseTable(tableRaw);
   const activeVersion = await getActiveVersion();
-  const pagination = parsePagination(rawLimit, rawPage);
+  const pagination = parsePagination(rawLimit, rawPage, rawOffset);
 
   if (table === "hex_database") {
     const [hexCards, total] = await Promise.all([
@@ -434,3 +465,5 @@ export async function getContentTable(
     meta: buildPaginationMeta(total, pagination.page, pagination.limit, pagedEvents.length)
   };
 }
+
+export { parseBooleanQuery };

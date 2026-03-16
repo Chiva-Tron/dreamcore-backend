@@ -208,6 +208,8 @@ Resolver bootstrap de gameplay desde backend canónico.
 - Siempre incluir `content_version` + `checksum_sha256`.
 - `unknown_content_table` para tabla inválida.
 - Compatibilidad temporal: el backend acepta aliases legacy `relics` y `events`, pero responde usando llaves canónicas `relics_database` y `events_database`.
+- `GET /content/bundle` filtra `invocation_database` y `relics_database` por progresión salvo que el cliente pida `include_locked=true`.
+- `GET /content/:table` acepta paginación por `limit/page` y mantiene compatibilidad con clientes legacy que envían `offset`.
 - En API, los eventos se serializan en `snake_case` y `reward_multiplier` es decimal.
 
 ## Criterio de salida
