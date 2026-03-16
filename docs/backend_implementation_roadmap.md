@@ -201,12 +201,14 @@ Resolver bootstrap de gameplay desde backend canónico.
 ## Endpoints
 
 - `GET /content/bundle`
-- `GET /content/:table` (`hex_database|invocation_database|relics|events`)
+- `GET /content/:table` (`hex_database|invocation_database|relics_database|events_database`)
 
 ## Reglas
 
 - Siempre incluir `content_version` + `checksum_sha256`.
 - `unknown_content_table` para tabla inválida.
+- Compatibilidad temporal: el backend acepta aliases legacy `relics` y `events`, pero responde usando llaves canónicas `relics_database` y `events_database`.
+- En API, los eventos se serializan en `snake_case` y `reward_multiplier` es decimal.
 
 ## Criterio de salida
 

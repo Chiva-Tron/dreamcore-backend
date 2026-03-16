@@ -73,7 +73,9 @@ ALTER TABLE "invocation_database" ADD CONSTRAINT "invocation_database_content_ve
 
 -- Data load note
 -- After this migration, load canonical content with:
--- npx tsx prisma/import-cards-relics-csv.ts docs/hex_database.csv docs/invocation_database.csv
+-- npx tsx database/import-hex-database.ts
+-- npx tsx database/import-invocation-database.ts
+-- npx tsx database/import-relics-database.ts
 
 -- DropForeignKey
 ALTER TABLE "cards" DROP CONSTRAINT "cards_content_version_id_fkey";

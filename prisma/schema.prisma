@@ -245,9 +245,9 @@ model HexCard {
   turn_duration1     Int?
   turn_duration2     Int?
   turn_duration3     Int?
-  chance1            Int?
-  chance2            Int?
-  chance3            Int?
+  chance1            String? @db.VarChar(3)
+  chance2            String? @db.VarChar(3)
+  chance3            String? @db.VarChar(3)
   ethereal           Boolean @default(false)
   content_version_id String  @db.Uuid
 
@@ -305,7 +305,7 @@ model Relic {
   content_version ContentVersion @relation(fields: [content_version_id], references: [id], onDelete: Restrict)
 
   @@index([content_version_id])
-  @@map("relics")
+  @@map("relics_database")
 }
 
 model Event {
@@ -318,7 +318,7 @@ model Event {
   scene                  String?    @db.VarChar(128)
   health                 Int?       @default(0)
   equipped_relics        Int?       @default(0)
-  reward_multiplier      Int?       @default(0)
+  reward_multiplier      Float?     @default(0) @db.DoublePrecision
   relic_reward           Int?
   starting_gold_coins    Int?       @default(0)
   starting_cards_in_hand Int?       @default(0)
@@ -330,7 +330,7 @@ model Event {
   content_version ContentVersion? @relation(fields: [content_version_id], references: [id], onDelete: Restrict)
 
   @@index([content_version_id])
-  @@map("events")
+  @@map("events_database")
 }
 
 model IdempotencyKey {

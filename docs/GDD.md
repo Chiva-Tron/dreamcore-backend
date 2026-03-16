@@ -167,7 +167,7 @@ Ejemplos actuales de cartas:
 
 ### 11.2 Reliquias
 
-Base de datos: [database/relics_database.txt](database/relics_database.txt).
+Base de datos: [database/relics_database.csv](database/relics_database.csv).
 
 Campos principales:
 
@@ -185,7 +185,7 @@ Ejemplos actuales:
 
 ### 11.3 Eventos y enemigos
 
-Base de datos: [database/events_database.txt](database/events_database.txt).
+Base de datos: [database/events_database.csv](database/events_database.csv).
 
 Campos principales:
 
@@ -195,6 +195,12 @@ Campos principales:
 - Parametros de combate: `health`, `rewardMultiplier`, `relicReward`.
 - Configuracion de mano: `startingGoldCoins`, `startingCardsInHand`, `cardsPerTurn`, `discardsPerTurn`.
 - Reglas: `specialConditions`.
+
+Notas de integración:
+
+- En el CSV runtime de eventos los headers están en camelCase.
+- En la API backend los mismos campos se exponen en snake_case, por ejemplo `event_class`, `name_es`, `reward_multiplier`, `starting_gold_coins`.
+- `rewardMultiplier` admite decimales en runtime y se persiste como decimal en backend (`reward_multiplier`).
 
 ### 11.4 Jefes
 
@@ -265,7 +271,7 @@ Campos principales:
 
 - Hexes: [hex_database.csv](hex_database.csv).
 - Invocaciones: [invocation_database.csv](invocation_database.csv).
-- Eventos: [database/events_database.txt](database/events_database.txt).
-- Reliquias: [database/relics_database.txt](database/relics_database.txt).
+- Eventos: [database/events_database.csv](database/events_database.csv).
+- Reliquias: [database/relics_database.csv](database/relics_database.csv).
 
 .

@@ -560,6 +560,12 @@ Errores:
 
 ## 5.4.1 `GET /content/bundle`
 
+Notas de contrato:
+
+- Las llaves canónicas del bundle son `hex_database`, `invocation_database`, `relics_database` y `events_database`.
+- `relics` y `events` quedaron sólo como aliases de compatibilidad para `GET /content/:table`.
+- Los CSV runtime usan algunos headers en camelCase, pero la API backend responde contenido en `snake_case`.
+
 Response 200:
 
 ```json
@@ -570,8 +576,8 @@ Response 200:
     "checksum_sha256": "hex",
     "hex_database": [],
     "invocation_database": [],
-    "relics": [],
-    "events": []
+    "relics_database": [],
+    "events_database": []
   },
   "meta": {
     "request_id": "uuid",
@@ -580,7 +586,7 @@ Response 200:
 }
 ```
 
-## 5.4.2 `GET /content/:table` (`hex_database|invocation_database|relics|events`)
+## 5.4.2 `GET /content/:table` (`hex_database|invocation_database|relics_database|events_database`)
 
 Parámetros de query opcionales:
 
@@ -589,8 +595,10 @@ Parámetros de query opcionales:
 
 Reglas de visibilidad:
 
-- `hex_database`, `invocation_database`, `relics` y `events` se devuelven completos para la `content_version` activa.
-- El filtrado por progresión aplica al endpoint `GET /content/bundle` y afecta a `invocation_database` y `relics`.
+- `hex_database`, `invocation_database`, `relics_database` y `events_database` se devuelven completos para la `content_version` activa.
+- El filtrado por progresión aplica al endpoint `GET /content/bundle` y afecta a `invocation_database` y `relics_database`.
+- Compatibilidad temporal: `GET /content/relics` y `GET /content/events` siguen resolviendo, pero la respuesta usa `table: "relics_database"` o `table: "events_database"`.
+- En `events_database`, `reward_multiplier` se devuelve como número decimal.
 
 Response 200:
 
@@ -1479,7 +1487,7 @@ Para claves de idempotencia en escrituras críticas:
 
 ## 18.6 Campo de contenido para enemigos con reliquias
 
-Se agrega soporte en `events` para `equipped_relics` (`int`, default `0`).
+Se agrega soporte en `events_database` para `equipped_relics` (`int`, default `0`).
 
 Semántica:
 
@@ -1504,7 +1512,7 @@ Implementado en runtime (23-02-2026):
   - acumula `nether_points`;
   - recalcula tiers y los persiste en `players` dentro de la misma transacción del cierre de run.
 - `GET /player/me/state` devuelve los campos de progresión y `unlocked_classes`.
-- `GET /content/bundle` aplica filtrado por tier del jugador autenticado para `invocation_database` y `relics`.
+- `GET /content/bundle` aplica filtrado por tier del jugador autenticado para `invocation_database` y `relics_database`.
 - `GET /content/:table` devuelve contenido completo de la versión activa con paginación (`limit/page`).
 
 Reglas actuales (v1 implementada):
@@ -1523,4 +1531,4 @@ Reglas actuales (v1 implementada):
 Notas de compatibilidad:
 
 - El mapeo de tier de cartas/reliquias se deriva del campo `tier` de contenido para soportar valores legacy (ej: `Invocacion Inicial`, `inicial`, numéricos).
-- `events` permanece sin gating por tier en v1.
+- `events_database` permanece sin gating por tier en v1.

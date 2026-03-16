@@ -3,7 +3,11 @@ import { prisma } from "../../lib/prisma";
 import { AuthContext } from "../../lib/auth-context";
 import { isInvocationUnlocked, isRelicUnlocked } from "../player/progression";
 
-type ContentTable = "hex_database" | "invocation_database" | "relics" | "events";
+type ContentTable =
+  | "hex_database"
+  | "invocation_database"
+  | "relics_database"
+  | "events_database";
 
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGE_SIZE = 1000;
@@ -59,6 +63,21 @@ function toNonNegativeInt(value: unknown, fallback = 0): number {
   return fallback;
 }
 
+function toNonNegativeNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, value);
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, parsed);
+    }
+  }
+
+  return fallback;
+}
+
 function isMissingEventColumnError(error: unknown) {
   const code = (error as { code?: string })?.code;
   const message = (error as { message?: string })?.message ?? "";
@@ -93,10 +112,15 @@ function toEventClass(value: unknown): string {
     normalized === "sacrifice" ||
     normalized === "upgrade" ||
     normalized === "beginning" ||
+    normalized === "initial_picks" ||
     normalized === "exit" ||
     normalized === "mystery"
   ) {
     return normalized;
+  }
+
+  if (normalized === "initial_pick") {
+    return "initial_picks";
   }
 
   return "mystery";
@@ -113,7 +137,7 @@ function toFallbackEventResponse(row: FallbackEventRow): Record<string, unknown>
     scene: toOptionalText(row.scene),
     health: toNonNegativeInt(row.health, 0),
     equipped_relics: 0,
-    reward_multiplier: toNonNegativeInt(row.reward_multiplier, 0),
+    reward_multiplier: toNonNegativeNumber(row.reward_multiplier, 0),
     relic_reward:
       row.relic_reward === null || row.relic_reward === undefined
         ? null
@@ -178,7 +202,7 @@ async function findEventsByContentVersion(contentVersionId: string) {
         discards_per_turn,
         special_conditions,
         content_version_id
-      FROM events
+      FROM events_database
       WHERE content_version_id = ${contentVersionId}
       ORDER BY id ASC
     `;
@@ -254,25 +278,28 @@ export async function getBundle(auth: AuthContext) {
     checksum_sha256: activeVersion.checksum_sha256,
     hex_database: hexCards,
     invocation_database: filteredInvocationCards,
-    relics: filteredRelics,
-    events: events.map((event) => normalizeEventForResponse(event as unknown as Record<string, unknown>))
+    relics_database: filteredRelics,
+    events_database: events.map((event) => normalizeEventForResponse(event as unknown as Record<string, unknown>))
   };
 }
 
 function parseTable(value: string): ContentTable {
-  if (
-    value === "hex_database" ||
-    value === "invocation_database" ||
-    value === "relics" ||
-    value === "events"
-  ) {
+  if (value === "hex_database" || value === "invocation_database") {
     return value;
+  }
+
+  if (value === "relics_database" || value === "relics") {
+    return "relics_database";
+  }
+
+  if (value === "events_database" || value === "events") {
+    return "events_database";
   }
 
   throw new HttpError(
     400,
     "unknown_content_table",
-    "Unknown content table. Use hex_database, invocation_database, relics or events"
+    "Unknown content table. Use hex_database, invocation_database, relics_database or events_database"
   );
 }
 
@@ -366,7 +393,7 @@ export async function getContentTable(
     };
   }
 
-  if (table === "relics") {
+  if (table === "relics_database") {
     const [relics, total] = await Promise.all([
       prisma.relic.findMany({
         where: { content_version_id: activeVersion.id },

@@ -14,8 +14,13 @@
     "seed:content": "tsx prisma/seed.ts",
     "seed:ranking": "tsx prisma/seed-ranking.ts",
     "seed:matias": "tsx prisma/seed-matias.ts",
-    "import:events": "tsx prisma/import-events-csv.ts",
-    "import:cards-relics": "tsx prisma/import-cards-relics-csv.ts",
+    "import:hex_database": "tsx database/import-hex-database.ts",
+    "import:invocation_database": "tsx database/import-invocation-database.ts",
+    "import:relics_database": "tsx database/import-relics-database.ts",
+    "import:events_database": "tsx database/import-events-database.ts",
+    "import:events": "npm run import:events_database",
+    "import:cards-relics": "npm run import:hex_database && npm run import:invocation_database && npm run import:relics_database",
+    "import:content": "npm run import:hex_database && npm run import:invocation_database && npm run import:relics_database && npm run import:events_database",
     "cleanup:idempotency": "tsx scripts/cleanup-idempotency-keys.ts"
   },
   "dependencies": {

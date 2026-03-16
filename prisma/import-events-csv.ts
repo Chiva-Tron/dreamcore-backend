@@ -1,10 +1,4 @@
-import "dotenv/config";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { EventClass, PrismaClient } from "@prisma/client";
-import { parse } from "csv-parse/sync";
-import { Pool } from "pg";
+import { importEventsDatabase } from "../database/import-events-database";
 
 type CsvRow = {
   [key: string]: string | undefined;
@@ -142,105 +136,7 @@ async function resolveContentVersionId(prisma: PrismaClient): Promise<string> {
 }
 
 async function main() {
-  const inputPath = process.argv[2];
-  if (!inputPath) {
-    throw new Error("Usage: tsx prisma/import-events-csv.ts <path-to-events.csv>");
-  }
-
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error("DATABASE_URL is not set");
-  }
-
-  const pool = new Pool({ connectionString: databaseUrl });
-  const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
-
-  try {
-    const csvText = await readFile(resolve(inputPath), "utf8");
-    const rows = parse(csvText, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true
-    }) as CsvRow[];
-
-    const firstRow = rows[0] ?? {};
-    const hasEquippedRelicsColumn = equippedRelicsHeaderAliases.some(
-      (header) => firstRow[header] !== undefined
-    );
-
-    if (!hasEquippedRelicsColumn) {
-      console.warn(
-        `Events CSV missing equipped_relics column. Supported headers: ${equippedRelicsHeaderAliases.join(", ")}. Defaulting equipped_relics to 0.`
-      );
-    }
-
-    const contentVersionId = await resolveContentVersionId(prisma);
-
-    let upserted = 0;
-    let skipped = 0;
-
-    for (const row of rows) {
-      const id = toIntOrDefault(row.id, -1);
-      const eventClass = toEventClass(row.event_class);
-
-      if (id <= 0 || !eventClass) {
-        skipped += 1;
-        continue;
-      }
-
-      const nameEs = (row.name_es ?? "").trim() || `event_${id}`;
-      const nameEn = (row.name_en ?? "").trim() || nameEs;
-      const equippedRelicsValue = getFirstDefinedValue(row, equippedRelicsHeaderAliases);
-
-      await prisma.event.upsert({
-        where: { id },
-        create: {
-          id,
-          event_class: eventClass,
-          name_es: nameEs,
-          name_en: nameEn,
-          deck: toDeckJson(row.deck),
-          image: toOptionalText(row.image),
-          scene: toOptionalText(row.scene),
-          health: toIntOrDefault(row.health, 0),
-          equipped_relics: toIntOrDefault(equippedRelicsValue, 0),
-          reward_multiplier: toIntOrDefault(row.reward_multiplier, 0),
-          relic_reward: toOptionalInt(row.relic_reward),
-          starting_gold_coins: toIntOrDefault(row.starting_gold_coins, 0),
-          starting_cards_in_hand: toIntOrDefault(row.starting_cards_in_hand, 0),
-          cards_per_turn: toIntOrDefault(row.cards_per_turn, 0),
-          discards_per_turn: toIntOrDefault(row.discards_per_turn, 0),
-          special_conditions: toOptionalText(row.special_conditions),
-          content_version_id: contentVersionId
-        },
-        update: {
-          event_class: eventClass,
-          name_es: nameEs,
-          name_en: nameEn,
-          deck: toDeckJson(row.deck),
-          image: toOptionalText(row.image),
-          scene: toOptionalText(row.scene),
-          health: toIntOrDefault(row.health, 0),
-          equipped_relics: toIntOrDefault(equippedRelicsValue, 0),
-          reward_multiplier: toIntOrDefault(row.reward_multiplier, 0),
-          relic_reward: toOptionalInt(row.relic_reward),
-          starting_gold_coins: toIntOrDefault(row.starting_gold_coins, 0),
-          starting_cards_in_hand: toIntOrDefault(row.starting_cards_in_hand, 0),
-          cards_per_turn: toIntOrDefault(row.cards_per_turn, 0),
-          discards_per_turn: toIntOrDefault(row.discards_per_turn, 0),
-          special_conditions: toOptionalText(row.special_conditions),
-          content_version_id: contentVersionId
-        }
-      });
-
-      upserted += 1;
-    }
-
-    console.log(`Events import completed. Upserted: ${upserted}. Skipped: ${skipped}.`);
-  } finally {
-    await prisma.$disconnect();
-    await pool.end();
-  }
+  await importEventsDatabase(process.argv[2]);
 }
 
 main().catch((error) => {
